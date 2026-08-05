@@ -35,6 +35,7 @@
 
 AI 在其中并不是替玩家做决定，而是作为一名"财经教练"，通过提问、反馈和复盘，引导玩家建立自己的投资逻辑。
 ## 🎬 演示!
+在线体验网址：file:///Users/carl/Desktop/Wealth%20Builder%20AI.html
 <img width="537" height="447" alt="截屏2026-08-05 15 54 17" src="https://github.com/user-attachments/assets/3222fe6e-9949-461f-8c9f-869d2697cc3c" />
 <img width="610" height="473" alt="截屏2026-08-05 15 54 04" src="https://github.com/user-attachments/assets/7981b144-3569-440f-8e7e-f3b376175ab1" />
 <img width="1526" height="921" alt="截屏2026-08-05 15 55 40" src="https://github.com/user-attachments/assets/8195b2fe-152a-413f-9520-429f2bcb275a" />
