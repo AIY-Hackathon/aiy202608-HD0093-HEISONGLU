@@ -1,4 +1,4 @@
-<img width="1461" height="940" alt="截屏2026-08-05 15 54 52" src="https://github.com/user-attachments/assets/fddec874-d9ee-41fc-bf6b-b728753c7c0c" />
+
 # aiy202608-HD0093-黑松露
 # 🏦 Wealth Builder AI：财富成长实验室
 
