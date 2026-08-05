@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Wealth Builder AI · 财富成长实验室</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', 'PingFang SC', Roboto, sans-serif; }
+        body { background: #0b0d10; color: #e8e6e3; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 12px; transition: background 1s; }
+        body.bg-green { background: #0b1a12; }
+        body.bg-red { background: #1a0e0e; }
+        .game-wrapper { max-width: 1400px; width: 100%; margin: 0 auto; position: relative; padding-top: 10px; }
+        .card { background: rgba(18, 22, 28, 0.9); backdrop-filter: blur(4px); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.7), inset 0 0 0 1px rgba(212, 175, 55, 0.08); padding: 24px; transition: all 0.2s; }
+        .btn { background: linear-gradient(145deg, #1e2328, #14181c); border: 1px solid #b8943c; color: #e8d5a3; padding: 10px 24px; border-radius: 60px; font-weight: 600; font-size: 0.95rem; letter-spacing: 0.5px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.5); display: inline-flex; align-items: center; gap: 8px; }
+        .btn-primary { background: linear-gradient(145deg, #b8943c, #8f6f2a); border-color: #e6c27a; color: #0b0d10; box-shadow: 0 0 20px rgba(184, 148, 60, 0.25); }
+        .btn-primary:hover { transform: scale(1.03); box-shadow: 0 0 30px rgba(184, 148, 60, 0.4); }
+        .btn-danger { background: linear-gradient(145deg, #8f2a2a, #5a1a1a); border-color: #c27a7a; color: #f0d5d5; }
+        .btn-danger:hover { transform: scale(1.03); box-shadow: 0 0 30px rgba(194, 122, 122, 0.3); }
+        .btn-sm { padding: 6px 14px; font-size: 0.8rem; }
+        .btn:hover { opacity: 0.9; transform: translateY(-2px); }
+        /* 反馈锁定遮罩 */
+        .feedback-lock { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 250; pointer-events: none; }
+        .feedback-lock.active { pointer-events: auto; background: rgba(0,0,0,0.15); }
+        .lang-toggle { position: fixed; bottom: 20px; left: 20px; z-index: 999; background: rgba(30, 35, 40, 0.75); backdrop-filter: blur(10px); border: 1px solid rgba(184, 148, 60, 0.3); border-radius: 40px; padding: 6px 14px; color: #e8d5a3; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.75rem; transition: all 0.3s; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        .lang-toggle:hover { background: rgba(30, 35, 40, 0.95); border-color: #b8943c; }
+        .resources-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+        .resource-item { background: rgba(10, 14, 18, 0.7); border-radius: 60px; padding: 10px 16px; display: flex; align-items: center; gap: 12px; border: 1px solid #2a2f36; backdrop-filter: blur(2px); transition: all 0.3s; position: relative; overflow: hidden; }
+        .resource-icon { font-size: 1.6rem; width: 40px; text-align: center; }
+        .resource-info { flex: 1; }
+        .resource-label { font-size: 0.7rem; opacity: 0.6; letter-spacing: 0.5px; }
+        .resource-value { font-size: 1.5rem; font-weight: 700; line-height: 1.2; color: #f0e2c0; transition: all 0.3s; }
+        .resource-value.flash-green { color: #6fcf97; text-shadow: 0 0 20px rgba(111, 207, 151, 0.6); }
+        .resource-value.flash-red { color: #f28b82; text-shadow: 0 0 20px rgba(242, 139, 130, 0.6); }
+        .progress-bar { height: 4px; background: #2a2f36; border-radius: 10px; margin-top: 2px; }
+        .progress-fill { height: 4px; border-radius: 10px; background: linear-gradient(90deg, #b8943c, #e6c27a); transition: width 0.4s; }
+        .round-badge { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+        .round-text { font-size: 1.3rem; font-weight: 300; color: #b8943c; letter-spacing: 1px; }
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px; margin: 16px 0; }
+        .investment-card { background: #171c21; border-radius: 28px; padding: 16px 14px 20px; border: 1px solid #2f353d; transition: 0.2s; cursor: pointer; box-shadow: 0 6px 0 #0b0d10; }
+        .investment-card:hover { transform: translateY(-4px); border-color: #b8943c; box-shadow: 0 12px 24px rgba(0,0,0,0.6); }
+        .card-title { font-size: 1.0rem; font-weight: 600; color: #e6d5b0; }
+        .card-sub { font-size: 0.7rem; opacity: 0.5; margin-bottom: 6px; }
+        .card-cost { display: flex; flex-wrap: wrap; gap: 6px 10px; background: #0f1318; padding: 6px 10px; border-radius: 30px; margin: 6px 0; font-size: 0.8rem; }
+        .badge-risk { background: #2d1f1a; color: #e69b7a; padding: 2px 10px; border-radius: 30px; font-size: 0.65rem; }
+        .badge-reward { background: #1f2a1f; color: #8fc98a; padding: 2px 10px; border-radius: 30px; font-size: 0.65rem; }
+        .badge-save { background: #1a2a3a; color: #7ab8e6; padding: 2px 10px; border-radius: 30px; font-size: 0.65rem; }
+        .badge-education { background: #2a2a3a; color: #b87ae6; padding: 2px 10px; border-radius: 30px; font-size: 0.65rem; }
+        .badge-fun { background: #3a2a1a; color: #e6b87a; padding: 2px 10px; border-radius: 30px; font-size: 0.65rem; }
+        .card-fit { margin-top: 6px; font-size: 0.7rem; color: #b8943c; border-top: 1px solid #2a2f36; padding-top: 6px; }
+        .card-type-tag { font-size: 0.55rem; padding: 1px 8px; border-radius: 20px; display: inline-block; margin-bottom: 4px; }
+        .card-type-tag.stock { background: #2a1a1a; color: #e69b7a; }
+        .card-type-tag.save { background: #1a2a3a; color: #7ab8e6; }
+        .card-type-tag.edu { background: #2a2a3a; color: #b87ae6; }
+        .card-type-tag.fun { background: #3a2a1a; color: #e6b87a; }
+        .event-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 1000; animation: fadeIn 0.3s; }
+        .event-modal { max-width: 580px; width: 94%; background: #1a1f24; border: 1px solid #b8943c; border-radius: 48px; padding: 36px 32px; box-shadow: 0 40px 80px rgba(0,0,0,0.9); max-height: 90vh; overflow-y: auto; }
+        .event-modal .event-year { display: inline-block; background: #b8943c; color: #0b0d10; font-weight: 700; padding: 2px 14px; border-radius: 30px; font-size: 0.7rem; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .event-modal .event-title { font-size: 1.8rem; margin: 4px 0 12px; color: #e6c27a; line-height: 1.3; font-weight: 700; }
+        .event-modal .rumors-section { background: #0f1318; border-radius: 16px; padding: 14px 16px; margin: 12px 0; border-left: 3px solid #b87ae6; }
+        .event-modal .rumors-section .rumor-label { color: #b87ae6; font-weight: 600; font-size: 0.75rem; letter-spacing: 1px; margin-bottom: 6px; display: block; }
+        .event-modal .rumors-section .rumor-item { font-size: 0.9rem; opacity: 0.9; padding: 4px 0; line-height: 1.5; display: flex; align-items: center; gap: 8px; }
+        .event-modal .rumors-section .rumor-item .rumor-marker { opacity: 0.4; font-size: 0.8rem; }
+        .event-modal .rumors-section .rumor-item .rumor-tag { font-size: 0.75rem; font-weight: 700; padding: 2px 12px; border-radius: 20px; letter-spacing: 0.5px; flex-shrink: 0; background: #2a2a2a; color: #e6b87a; border: 1px solid #b87ae6; }
+        .event-modal .lesson-box { background: #1c2329; padding: 12px 16px; border-radius: 16px; margin: 12px 0 18px; font-size: 0.9rem; border: 1px dashed #b8943c; }
+        .event-modal .lesson-box i { color: #b8943c; margin-right: 8px; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .ai-coach-area { background: #11161b; border-radius: 40px; padding: 18px 22px; margin: 24px 0; border-left: 6px solid #b8943c; }
+        .ai-header { display: flex; align-items: center; gap: 14px; font-weight: 600; color: #e6d5b0; }
+        .ai-bubble { background: #1c2329; padding: 14px 18px; border-radius: 28px; margin: 10px 0; border: 1px solid #2f353d; line-height: 1.8; font-size: 0.95rem; min-height: 60px; white-space: pre-line; max-height: 300px; overflow-y: auto; }
+        .ai-bubble::-webkit-scrollbar { width: 4px; }
+        .ai-bubble::-webkit-scrollbar-track { background: #0f1318; border-radius: 10px; }
+        .ai-bubble::-webkit-scrollbar-thumb { background: #b8943c; border-radius: 10px; }
+        .ai-question-input { display: flex; gap: 10px; margin-top: 10px; }
+        .ai-question-input input { flex: 1; background: #0f1318; border: 1px solid #3a3f47; border-radius: 60px; padding: 10px 16px; color: #e8e6e3; }
+        .ending-container { text-align: center; padding: 30px 20px; max-height: 90vh; overflow-y: auto; }
+        .ending-container::-webkit-scrollbar { width: 6px; }
+        .ending-container::-webkit-scrollbar-track { background: #0f1318; border-radius: 10px; }
+        .ending-container::-webkit-scrollbar-thumb { background: #b8943c; border-radius: 10px; }
+        .ending-icon { font-size: 4.5rem; margin: 12px 0; }
+        .flex-row { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; }
+        .event-log { max-height: 200px; overflow-y: auto; background: #0f1318; border-radius: 24px; padding: 12px 16px; margin: 12px 0; border: 1px solid #2a2f36; }
+        .log-item { padding: 6px 0; border-bottom: 1px solid #1e2328; font-size: 0.85rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
+        .log-item:hover { background: #1a1f24; border-radius: 8px; padding-left: 8px; }
+        .log-item .log-year { color: #b8943c; font-weight: 600; }
+        .log-item .log-event-name { flex: 1; }
+        .log-item .log-view-btn { color: #7ab8e6; font-size: 0.7rem; opacity: 0.6; }
+        .log-item .log-view-btn:hover { opacity: 1; }
+        .log-detail { background: #0a0d10; border-radius: 16px; padding: 12px 16px; margin-top: 6px; border-left: 3px solid #b8943c; font-size: 0.85rem; line-height: 1.6; display: none; }
+        .log-detail.open { display: block; }
+        .log-detail .rumor-tag { font-size: 0.65rem; font-weight: 700; padding: 1px 10px; border-radius: 20px; background: #2a2a2a; color: #e6b87a; border: 1px solid #b87ae6; margin-left: 4px; }
+        .about-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 2000; animation: fadeIn 0.3s; }
+        .about-modal { max-width: 720px; width: 92%; max-height: 85vh; overflow-y: auto; background: #1a1f24; border: 1px solid #b8943c; border-radius: 48px; padding: 40px 36px; box-shadow: 0 40px 80px rgba(0,0,0,0.9); }
+        .about-modal::-webkit-scrollbar { width: 6px; }
+        .about-modal::-webkit-scrollbar-track { background: #0f1318; border-radius: 10px; }
+        .about-modal::-webkit-scrollbar-thumb { background: #b8943c; border-radius: 10px; }
+        .about-modal h1 { font-size: 2.2rem; color: #e6c27a; margin-bottom: 6px; }
+        .about-modal .subhead { color: #b8943c; font-size: 1.1rem; font-weight: 300; margin-bottom: 24px; border-bottom: 1px solid #2a2f36; padding-bottom: 16px; }
+        .about-modal h3 { color: #e6d5b0; margin: 20px 0 8px; font-size: 1.1rem; }
+        .about-modal p { opacity: 0.8; line-height: 1.7; margin-bottom: 12px; font-size: 0.95rem; }
+        .about-modal ul { padding-left: 20px; opacity: 0.8; line-height: 1.8; }
+        .about-modal .close-about { margin-top: 28px; display: flex; justify-content: flex-end; }
+        .result-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 1500; animation: fadeIn 0.3s; }
+        .result-modal { max-width: 650px; width: 94%; background: #1a1f24; border: 1px solid #b8943c; border-radius: 48px; padding: 32px 30px; box-shadow: 0 40px 80px rgba(0,0,0,0.9); max-height: 90vh; overflow-y: auto; }
+        .result-modal .result-title { font-size: 1.6rem; color: #e6c27a; margin-bottom: 4px; }
+        .result-modal .result-sub { opacity: 0.6; font-size: 0.9rem; margin-bottom: 16px; }
+        .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: #0f1318; border-radius: 28px; padding: 16px 18px; margin: 12px 0; }
+        .result-item { display: flex; align-items: center; gap: 10px; font-size: 0.95rem; }
+        .result-item .change { font-weight: 700; margin-left: auto; }
+        .change.positive { color: #6fcf97; }
+        .change.negative { color: #f28b82; }
+        .result-event-badge { background: #1c2329; border-radius: 20px; padding: 10px 14px; margin: 10px 0; border-left: 4px solid #b8943c; font-size: 0.9rem; }
+        .result-modal .btn { width: 100%; justify-content: center; margin-top: 10px; }
+        .reflection-box { background: #1c2329; border-radius: 20px; padding: 16px 18px; margin: 12px 0; border-left: 4px solid #b87ae6; }
+        .reflection-box .reflection-title { color: #b87ae6; font-weight: 600; font-size: 0.9rem; }
+        .reflection-box .reflection-content { opacity: 0.85; line-height: 1.6; margin-top: 4px; font-size: 0.9rem; }
+        /* 反馈动画 - 2.5秒 */
+        .screen-flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 300; opacity: 0; transition: opacity 0.1s; }
+        .screen-flash.flash-green { background: radial-gradient(circle at center, rgba(111, 207, 151, 0.5) 0%, transparent 70%); opacity: 1; animation: flashFade 2.5s ease forwards; }
+        .screen-flash.flash-red { background: radial-gradient(circle at center, rgba(242, 139, 130, 0.6) 0%, transparent 70%); opacity: 1; animation: flashFade 2.5s ease forwards; }
+        @keyframes flashFade { 0% { opacity: 0; } 10% { opacity: 1; } 60% { opacity: 0.9; } 100% { opacity: 0; } }
+        .coin-rain { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 200; overflow: hidden; opacity: 0.8; }
+        .coin { position: absolute; font-size: 2rem; animation: coinFall 2.5s ease-out forwards; opacity: 0; }
+        @keyframes coinFall { 0% { transform: translateY(-20px) rotate(0deg) scale(0.5); opacity: 1; } 100% { transform: translateY(calc(100vh + 50px)) rotate(720deg) scale(1.2); opacity: 0; } }
+        .achievement-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); background: linear-gradient(145deg, #1a1f24, #2a2f36); border: 2px solid #e6c27a; border-radius: 40px; padding: 30px 40px; z-index: 500; box-shadow: 0 0 80px rgba(184, 148, 60, 0.4); text-align: center; animation: achievementPop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; pointer-events: none; }
+        .achievement-popup .ach-icon { font-size: 4rem; margin-bottom: 8px; }
+        .achievement-popup .ach-title { font-size: 1.8rem; color: #e6c27a; font-weight: 700; }
+        .achievement-popup .ach-desc { opacity: 0.8; font-size: 1rem; margin-top: 4px; }
+        @keyframes achievementPop { 0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; } 60% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
+        .rival-panel { background: linear-gradient(145deg, #1a1f2a, #0f1318); border-radius: 24px; padding: 14px 20px; margin-bottom: 16px; border: 2px solid #e6c27a; box-shadow: 0 0 30px rgba(184, 148, 60, 0.15); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; position: relative; z-index: 10; }
+        .rival-panel .rival-name { font-weight: 700; color: #e6c27a; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
+        .rival-panel .rival-name i { font-size: 1.4rem; }
+        .rival-panel .rival-assets { color: #6fcf97; font-weight: 700; font-size: 1.3rem; }
+        .rival-panel .rival-change { font-size: 0.9rem; font-weight: 600; }
+        .rival-panel .rival-change.up { color: #6fcf97; }
+        .rival-panel .rival-change.down { color: #f28b82; }
+        .rival-panel .rival-detail { display: flex; gap: 16px; font-size: 0.85rem; opacity: 0.7; }
+        .rival-panel .rival-detail span { display: flex; align-items: center; gap: 4px; }
+        .rival-panel .rival-style { font-size: 0.7rem; opacity: 0.5; padding: 2px 10px; border-radius: 20px; background: #1a1f24; }
+        .rival-panel .rival-mood { font-size: 0.7rem; padding: 2px 10px; border-radius: 20px; background: #1a2a1a; color: #6fcf97; }
+        .player-tag { background: #2a3a2a; color: #6fcf97; padding: 2px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; border: 1px solid #6fcf97; }
+        .rival-tag { background: #3a2a2a; color: #f28b82; padding: 2px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; border: 1px solid #f28b82; }
+        .duel-progress { background: #0f1318; border-radius: 30px; padding: 10px 16px; margin-bottom: 16px; border: 1px solid #2a2f36; position: relative; z-index: 10; }
+        .duel-progress .duel-labels { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px; }
+        .duel-progress .duel-labels .you-label { color: #6fcf97; font-weight: 600; }
+        .duel-progress .duel-labels .rival-label { color: #f28b82; font-weight: 600; }
+        .duel-track { position: relative; height: 28px; background: #1a1f24; border-radius: 30px; overflow: visible; box-shadow: inset 0 2px 6px rgba(0,0,0,0.5); display: flex; align-items: center; }
+        .duel-track .bar-container { position: relative; width: 100%; height: 100%; display: flex; align-items: center; }
+        .duel-track .you-bar { height: 22px; background: linear-gradient(90deg, #2a7a4a, #6fcf97); border-radius: 30px; transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 0 16px rgba(111, 207, 151, 0.3); display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font-size: 0.65rem; font-weight: 700; color: #0b0d10; min-width: 30px; z-index: 1; white-space: nowrap; position: absolute; left: 0; top: 3px; }
+        .duel-track .rival-bar { height: 22px; background: linear-gradient(90deg, #f28b82, #8a2a2a); border-radius: 30px; transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 0 16px rgba(242, 139, 130, 0.3); display: flex; align-items: center; justify-content: flex-start; padding-left: 8px; font-size: 0.65rem; font-weight: 700; color: #0b0d10; min-width: 30px; z-index: 1; white-space: nowrap; position: absolute; right: 0; top: 3px; }
+        .duel-track .vs-marker { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); background: #b8943c; color: #0b0d10; font-weight: 900; font-size: 0.8rem; padding: 0 14px; border-radius: 20px; box-shadow: 0 0 25px rgba(184, 148, 60, 0.6); z-index: 3; line-height: 24px; white-space: nowrap; }
+        .rival-danmaku { background: rgba(20, 16, 16, 0.9); border-radius: 20px; padding: 8px 18px; margin: 6px 0 12px 0; border-left: 4px solid #f28b82; animation: danmakuIn 0.4s ease; display: flex; align-items: center; gap: 10px; min-height: 40px; z-index: 10; position: relative; }
+        .rival-danmaku .danmaku-icon { font-size: 1.4rem; }
+        .rival-danmaku .danmaku-text { font-size: 0.95rem; }
+        .rival-danmaku .danmaku-text .highlight { color: #f28b82; font-weight: 600; }
+        @keyframes danmakuIn { 0% { opacity: 0; transform: translateX(-20px); } 100% { opacity: 1; transform: translateX(0); } }
+        .exit-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 4000; animation: fadeIn 0.3s; }
+        .exit-modal { max-width: 440px; width: 92%; background: #1a1f24; border: 1px solid #c27a7a; border-radius: 48px; padding: 36px 32px; text-align: center; box-shadow: 0 40px 80px rgba(0,0,0,0.9); }
+        .exit-modal h2 { color: #f28b82; font-size: 1.8rem; margin-bottom: 12px; }
+        .exit-modal p { opacity: 0.7; margin-bottom: 24px; }
+        .exit-modal .exit-btns { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+        .round-report { background: #1c2329; border-radius: 24px; padding: 16px 20px; margin: 12px 0; border-left: 4px solid #b8943c; animation: slideIn 0.4s ease; }
+        @keyframes slideIn { 0% { opacity: 0; transform: translateY(-10px); } 100% { opacity: 1; transform: translateY(0); } }
+        .style-select { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin: 16px 0; }
+        .style-option { padding: 10px 20px; border-radius: 30px; border: 2px solid #2a2f36; cursor: pointer; transition: 0.3s; background: #0f1318; }
+        .style-option:hover { border-color: #b8943c; transform: scale(1.02); }
+        .style-option.active { border-color: #e6c27a; background: #1a1f24; box-shadow: 0 0 20px rgba(184, 148, 60, 0.2); }
+        .style-option .style-icon { font-size: 1.5rem; display: block; }
+        .style-option .style-name { font-size: 0.85rem; margin-top: 4px; }
+        .style-option .style-desc { font-size: 0.65rem; opacity: 0.5; }
+        .ending-review { text-align: left; margin: 16px 0; }
+        .ending-review .review-round { background: #0f1318; border-radius: 16px; padding: 12px 16px; margin: 8px 0; border-left: 3px solid #b8943c; }
+        .ending-review .review-round .round-header { display: flex; justify-content: space-between; font-size: 0.85rem; color: #b8943c; }
+        .ending-review .review-round .round-detail { font-size: 0.85rem; opacity: 0.8; margin-top: 4px; }
+        .ending-review .review-round .round-result { font-weight: 600; }
+        .ending-review .review-round .round-result.win { color: #6fcf97; }
+        .ending-review .review-round .round-result.lose { color: #f28b82; }
+        .final-assessment { background: linear-gradient(145deg, #1a1f2a, #0f1318); border-radius: 24px; padding: 20px 24px; margin: 16px 0; border: 1px solid #b8943c; text-align: left; }
+        .final-assessment .assessment-title { color: #e6c27a; font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+        .final-assessment .assessment-content { opacity: 0.85; line-height: 1.8; font-size: 0.95rem; }
+        .tutorial-step { background: #171c21; border-radius: 40px; padding: 24px; border: 1px solid #b8943c; margin: 10px 0; }
+        @media (max-width: 720px) {
+            .resources-bar { grid-template-columns: 1fr 1fr; }
+            .lang-toggle { bottom: 12px; left: 12px; font-size: 0.65rem; padding: 4px 10px; }
+            .event-modal { margin: 16px; padding: 24px; }
+            .about-modal { padding: 28px 20px; }
+            .about-modal h1 { font-size: 1.6rem; }
+            .card-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+            .result-grid { grid-template-columns: 1fr; }
+            .rival-panel { flex-direction: column; align-items: stretch; text-align: center; }
+            .rival-panel .rival-detail { justify-content: center; }
+            .duel-progress .duel-labels { font-size: 0.7rem; }
+            .duel-track { height: 24px; }
+            .duel-track .you-bar, .duel-track .rival-bar { height: 18px; font-size: 0.55rem; min-width: 20px; top: 3px; }
+            .duel-track .vs-marker { font-size: 0.65rem; padding: 0 10px; line-height: 18px; }
+            .style-select { gap: 8px; }
+            .style-option { padding: 8px 14px; }
+            .result-modal { max-width: 100%; margin: 10px; padding: 20px; }
+            .final-assessment .assessment-stats { grid-template-columns: 1fr 1fr; }
+            .event-modal .event-title { font-size: 1.3rem; }
+            .event-modal .rumors-section .rumor-item { font-size: 0.8rem; flex-wrap: wrap; }
+            .event-modal .rumors-section .rumor-item .rumor-tag { font-size: 0.65rem; padding: 1px 8px; }
+        }
+        @media (max-width: 480px) {
+            .rival-panel .rival-detail { gap: 8px; font-size: 0.7rem; }
+            .rival-panel .rival-assets { font-size: 1rem; }
+            .duel-track .you-bar, .duel-track .rival-bar { font-size: 0.5rem; min-width: 16px; padding: 0 4px; }
+            .duel-track .vs-marker { font-size: 0.55rem; padding: 0 6px; line-height: 16px; }
+        }
+    </style>
+</head>
+<body id="appBody">
+    <div class="lang-toggle" id="langToggle" onclick="window.toggleLang && window.toggleLang()">
+        <i class="fas fa-globe"></i> <span id="langLabel">EN / 中</span>
+    </div>
+    <div class="game-wrapper" id="app"></div>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script>
+        const { createApp, ref, computed, watch, onMounted } = Vue;
+        const app = createApp({
+            setup() {
+                const lang = ref('zh');
+                const toggleLang = () => {
+                    lang.value = lang.value === 'zh' ? 'en' : 'zh';
+                    document.getElementById('langLabel').innerText = lang.value === 'zh' ? 'EN / 中' : '中 / EN';
+                };
+                window.toggleLang = toggleLang;
+
+                const flashClass = ref('');
+                const coinRain = ref([]);
+                const achievement = ref(null);
+                let achievementTimer = null;
+                let flashTimer = null;
+                let coinTimer = null;
+                const isAchievementShowing = ref(false);
+                // 反馈锁定状态
+                const isFeedbackShowing = ref(false);
+
+                const showAbout = ref(false);
+                const openAbout = () => { showAbout.value = true; };
+                const closeAbout = () => { showAbout.value = false; };
+                const showResult = ref(false);
+                const lastResult = ref(null);
+                const roundReport = ref(null);
+                const showExitConfirm = ref(false);
+                const gameState = ref('landing');
+                const round = ref(0);
+                const maxRounds = 10;
+                const startResources = { cash: 200, knowledge: 50, network: 30, reputation: 10 };
+                const resources = ref({ ...startResources });
+
+                const rivalStyles = [
+                    { id: 'aggressive', icon: '🔥', name: { zh: '激进型', en: 'Aggressive' }, desc: { zh: '高风险高收益', en: 'High risk, high reward' } },
+                    { id: 'conservative', icon: '🛡️', name: { zh: '保守型', en: 'Conservative' }, desc: { zh: '低风险稳扎稳打', en: 'Low risk, steady' } },
+                    { id: 'follower', icon: '🐑', name: { zh: '跟风型', en: 'Follower' }, desc: { zh: '模仿你的投资', en: 'Follows your lead' } },
+                    { id: 'contrarian', icon: '🔄', name: { zh: '反转型', en: 'Contrarian' }, desc: { zh: '和你反着来', en: 'Opposite of you' } },
+                    { id: 'random', icon: '🎲', name: { zh: '随机型', en: 'Random' }, desc: { zh: '完全随机', en: 'Completely random' } }
+                ];
+                const selectedRivalStyle = ref('random');
+
+                const rival = ref({ name: '小明', cash: 180, knowledge: 40, network: 35, reputation: 15, total: 270, lastChange: 0, lastInvestment: null, style: '随机型', mood: '冷静' });
+                const danmaku = ref(null);
+                let danmakuTimer = null;
+                const usedEventIds = ref([]);
+                const expandedLogId = ref(null);
+                const toggleLogDetail = (id) => { expandedLogId.value = expandedLogId.value === id ? null : id; };
+                const investmentHistory = ref([]);
+
+                const allCards = [
+                    { id: 'ai', name: { zh: '🤖 AI算力基金', en: 'AI Fund' }, cost: { cash: 30, knowledge: 10 }, reward: { cash: 35, knowledge: 15, reputation: 8, network: 5 }, risk: 'high', type: 'stock', concept: { zh: '非对称收益', en: 'Asymmetric' }, fit: { knowledge: 40 } },
+                    { id: 'green', name: { zh: '🌿 新能源ETF', en: 'Green ETF' }, cost: { cash: 35, network: 5 }, reward: { cash: 22, reputation: 12, network: 8 }, risk: 'medium', type: 'stock', concept: { zh: '政策红利', en: 'Policy' }, fit: { network: 20 } },
+                    { id: 'semicon', name: { zh: '💻 半导体基金', en: 'Semiconductor' }, cost: { cash: 40, knowledge: 20 }, reward: { cash: 25, knowledge: 15, reputation: 10, network: 6 }, risk: 'high', type: 'stock', concept: { zh: '周期成长', en: 'Cyclical' }, fit: { knowledge: 50 } },
+                    { id: 'health', name: { zh: '🏥 医疗健康基金', en: 'Healthcare' }, cost: { cash: 35, knowledge: 15 }, reward: { cash: 22, knowledge: 10, reputation: 12, network: 5 }, risk: 'medium', type: 'stock', concept: { zh: '抗周期', en: 'Anti-cycle' }, fit: { knowledge: 30 } },
+                    { id: 'crypto', name: { zh: '₿ 加密货币基金', en: 'Crypto Fund' }, cost: { cash: 20, knowledge: 25 }, reward: { cash: 40, knowledge: 5, reputation: 5, network: 8 }, risk: 'high', type: 'stock', concept: { zh: '高波动性', en: 'High volatility' }, fit: { knowledge: 60, cash: 50 } },
+                    { id: 'reit', name: { zh: '🏢 房地产信托', en: 'REIT' }, cost: { cash: 50, network: 15 }, reward: { cash: 30, reputation: 15, network: 10 }, risk: 'medium', type: 'stock', concept: { zh: '长期资产', en: 'Long-term' }, fit: { network: 30, cash: 60 } },
+                    { id: 'consumer', name: { zh: '🛒 消费龙头股', en: 'Consumer' }, cost: { cash: 30, knowledge: 5 }, reward: { cash: 18, reputation: 8, network: 4 }, risk: 'medium', type: 'stock', concept: { zh: '防御型', en: 'Defensive' }, fit: { cash: 30 } },
+                    { id: 'defense', name: { zh: '⚔️ 军工航天基金', en: 'Defense' }, cost: { cash: 30, knowledge: 10 }, reward: { cash: 20, reputation: 15, network: 8 }, risk: 'medium', type: 'stock', concept: { zh: '地缘避险', en: 'Geo-hedge' }, fit: { cash: 30 } },
+                    { id: 'saving', name: { zh: '💰 活期储蓄', en: 'Savings' }, cost: { cash: 0 }, reward: { cash: 6, reputation: 2 }, risk: 'low', type: 'save', concept: { zh: '流动性管理', en: 'Liquidity' }, fit: {} },
+                    { id: 'fixed_deposit', name: { zh: '🏦 定期存款', en: 'Fixed Deposit' }, cost: { cash: 30 }, reward: { cash: 42, reputation: 5 }, risk: 'low', type: 'save', concept: { zh: '稳定收益', en: 'Stable Return' }, fit: { cash: 30 } },
+                    { id: 'gold', name: { zh: '🥇 黄金投资', en: 'Gold' }, cost: { cash: 50 }, reward: { cash: 30, reputation: 15, network: 5 }, risk: 'low', type: 'save', concept: { zh: '避险保值', en: 'Safe Haven' }, fit: { cash: 40 } },
+                    { id: 'bond', name: { zh: '📜 国债逆回购', en: 'Treasury' }, cost: { cash: 25 }, reward: { cash: 15, knowledge: 5, reputation: 3 }, risk: 'low', type: 'save', concept: { zh: '安全资产', en: 'Safe Asset' }, fit: { cash: 20 } },
+                    { id: 'course', name: { zh: '📚 财经课程', en: 'Finance Course' }, cost: { cash: 15, knowledge: 3 }, reward: { cash: 0, knowledge: 25, reputation: 8, network: 5 }, risk: 'low', type: 'edu', concept: { zh: '自我投资', en: 'Self-Investment' }, fit: { cash: 15 } },
+                    { id: 'travel', name: { zh: '✈️ 商务考察旅行', en: 'Business Trip' }, cost: { cash: 25, network: 5 }, reward: { cash: 0, knowledge: 15, network: 20, reputation: 10 }, risk: 'low', type: 'fun', concept: { zh: '开阔视野', en: 'Expand Horizons' }, fit: { cash: 25 } },
+                    { id: 'volunteer', name: { zh: '❤️ 公益志愿活动', en: 'Volunteer' }, cost: { cash: 8 }, reward: { cash: 0, reputation: 20, network: 10 }, risk: 'low', type: 'fun', concept: { zh: '社会资本', en: 'Social Capital' }, fit: { cash: 10 } }
+                ];
+
+                const currentCards = computed(() => allCards);
+
+                // 14条事件库
+                const eventDB = [
+                    { id: 'svb', year: '2023年3月', title: { zh: '硅谷银行倒闭引发金融恐慌', en: 'SVB Collapse Triggers Panic' }, impact: { cash: 0.85, knowledge: 0.8, network: 0.6, reputation: 0.7 }, lesson: { zh: '银行倒闭事件往往引发市场避险情绪，资金会流向安全资产。', en: 'Bank failures often trigger risk-off sentiment.' }, rumors: [{ text: '美联储将紧急降息救市', fake: true }, { text: '花旗银行也面临同样风险', fake: false }, { text: 'SVB的客户已经全部拿回存款', fake: true }, { text: '巴菲特正在抄底银行股', fake: false }], bonuses: { gold: 1.8, bond: 1.5, saving: 1.2 } },
+                    { id: 'rate_cut', year: '2024年9月', title: { zh: '央行降准降息·房贷利率下调', en: 'PBOC Rate Cut & RRR Reduction' }, impact: { cash: 1.2, knowledge: 0.9, network: 1.1, reputation: 0.8 }, lesson: { zh: '宽松货币政策通常利好资金密集型行业。', en: 'Easing monetary policy benefits capital-intensive sectors.' }, rumors: [{ text: '央行下一步将直接印钱发给居民', fake: true }, { text: '房地产板块已经提前消化利好', fake: false }, { text: '降息会导致人民币大幅贬值', fake: true }, { text: '基建项目审批速度已明显加快', fake: false }], bonuses: { reit: 2.0, green: 1.6, fixed_deposit: 1.3 } },
+                    { id: 'ai_boom', year: '2025年6月', title: { zh: 'AI全面爆发·算力军备竞赛', en: 'AI Boom & Computing Arms Race' }, impact: { cash: 1.5, knowledge: 1.4, network: 1.3, reputation: 1.2 }, lesson: { zh: '技术革命创造结构性机会，但泡沫风险伴随其中。', en: 'Tech revolutions create structural opportunities, but bubbles can form.' }, rumors: [{ text: 'OpenAI下一代模型将彻底取代程序员', fake: true }, { text: '英伟达订单已排到2027年', fake: false }, { text: '中国AI芯片已实现全面自主可控', fake: true }, { text: '全球算力缺口仍在持续扩大', fake: false }], bonuses: { ai: 3.5, semicon: 1.2, crypto: 1.2 } },
+                    { id: 'trade_war', year: '2026年1月', title: { zh: '全球贸易摩擦·大宗商品波动', en: 'Trade Tensions & Commodity Volatility' }, impact: { cash: 0.9, knowledge: 0.7, network: 0.8, reputation: 0.6 }, lesson: { zh: '地缘政治紧张时，军工和战略资源资产受关注。', en: 'During geopolitical tensions, defense and strategic resources gain attention.' }, rumors: [{ text: '中美将在下周达成全面和解', fake: true }, { text: '欧盟正在准备反制关税清单', fake: false }, { text: '全球供应链已经找到替代方案', fake: true }, { text: '能源价格波动已传导至下游产业', fake: false }], bonuses: { defense: 2.2, gold: 1.5, semicon: 1.2 } },
+                    { id: 'tech_correction', year: '2025年12月', title: { zh: 'AI泡沫破裂·科技股大幅回调', en: 'AI Bubble Burst & Tech Selloff' }, impact: { cash: 0.7, knowledge: 0.9, network: 0.8, reputation: 0.7 }, lesson: { zh: '高估值终会修正，均值回归是市场铁律。', en: 'High valuations eventually correct.' }, rumors: [{ text: '美联储将紧急降息救市', fake: true }, { text: '多家AI公司开始大规模裁员', fake: false }, { text: '政府将设立平准基金托市', fake: true }, { text: '投资者正在转向防御性板块', fake: false }], bonuses: { gold: 1.8, bond: 1.5, consumer: 1.3, ai: 0.3, semicon: 0.4 } },
+                    { id: 'green_policy', year: '2024年3月', title: { zh: '欧盟碳关税·新能源产业爆发', en: 'EU Carbon Tariff & Green Energy Surge' }, impact: { cash: 1.3, knowledge: 1.1, network: 1.2, reputation: 1.4 }, lesson: { zh: '政策红利往往能创造持续数年的投资主线。', en: 'Policy dividends can create multi-year investment themes.' }, rumors: [{ text: '欧盟将取消碳关税以缓解通胀', fake: true }, { text: '中国光伏企业订单已排满全年产能', fake: false }, { text: '储能技术取得革命性突破', fake: true }, { text: '新能源车渗透率已超过50%', fake: false }], bonuses: { green: 2.5, semicon: 1.4, reit: 1.2 } },
+                    { id: 'inflation', year: '2023年10月', title: { zh: '通胀高企·美联储激进加息', en: 'Inflation Surge & Fed Rate Hikes' }, impact: { cash: 0.75, knowledge: 0.9, network: 0.7, reputation: 0.6 }, lesson: { zh: '高通胀环境下，实物资产和抗通胀资产更受青睐。', en: 'In high inflation, real assets and inflation hedges are favored.' }, rumors: [{ text: '美联储即将转向降息', fake: true }, { text: '房租和食品价格仍在上涨', fake: false }, { text: '工资已跟随物价同步增长', fake: true }, { text: '黄金ETF近期持续获得资金流入', fake: false }], bonuses: { gold: 2.0, bond: 1.5, consumer: 1.2, reit: 0.5 } },
+                    { id: 'chip_war', year: '2024年8月', title: { zh: '芯片战争升级·国产替代加速', en: 'Chip War Escalates & Localization Speeds Up' }, impact: { cash: 1.1, knowledge: 1.3, network: 0.9, reputation: 1.1 }, lesson: { zh: '外部压力往往倒逼产业升级，国产替代是长期趋势。', en: 'External pressure often forces industrial upgrading.' }, rumors: [{ text: '中国将在半年内攻克3nm工艺', fake: true }, { text: '美国将放宽对华芯片限制', fake: true }, { text: '国产芯片设计工具已实现自主', fake: false }, { text: '多家车企开始采用国产车规芯片', fake: false }], bonuses: { semicon: 2.8, ai: 1.5, green: 0.9 } },
+                    { id: 'oil_shock', year: '2024年5月', title: { zh: '中东局势紧张·油价大幅飙升', en: 'Middle East Tensions & Oil Price Surge' }, impact: { cash: 0.8, knowledge: 0.7, network: 0.9, reputation: 0.8 }, lesson: { zh: '能源危机时，替代能源和能源效率成为焦点。', en: 'During energy crises, alternatives and efficiency gain focus.' }, rumors: [{ text: 'OPEC将立即增产平抑油价', fake: true }, { text: '欧洲正加速能源转型', fake: false }, { text: '美国战略石油储备已耗尽', fake: true }, { text: '新能源车订单因油价上涨激增', fake: false }], bonuses: { green: 2.0, defense: 1.5, consumer: 0.7 } },
+                    { id: 'bank_crisis', year: '2024年11月', title: { zh: '欧洲银行危机蔓延·市场恐慌', en: 'European Bank Crisis Spreads' }, impact: { cash: 0.7, knowledge: 0.8, network: 0.6, reputation: 0.7 }, lesson: { zh: '金融体系风险爆发时，现金和黄金是最佳避风港。', en: 'When financial system risks erupt, cash and gold are the best havens.' }, rumors: [{ text: '欧洲央行将无限量购债托市', fake: true }, { text: '多家欧洲银行面临破产风险', fake: false }, { text: '存款保险制度将全额赔付', fake: true }, { text: '黄金价格已创历史新高', fake: false }], bonuses: { gold: 2.2, bond: 1.6, saving: 1.4 } },
+                    { id: 'space_race', year: '2025年3月', title: { zh: '太空商业化加速·卫星互联网竞赛', en: 'Space Commercialization & Satellite Internet Race' }, impact: { cash: 1.0, knowledge: 1.2, network: 1.0, reputation: 1.3 }, lesson: { zh: '新兴科技领域往往伴随高波动和长周期回报。', en: 'Emerging tech often comes with high volatility and long-term returns.' }, rumors: [{ text: '普通人明年即可登陆月球旅游', fake: true }, { text: '卫星互联网用户已突破千万', fake: false }, { text: '太空垃圾已威胁到国际空间站', fake: false }, { text: '中国正在建设自己的星链系统', fake: false }], bonuses: { ai: 1.8, semicon: 1.6, defense: 1.3 } },
+                    { id: 'consumer_boom', year: '2025年9月', title: { zh: '消费复苏·内需市场强劲反弹', en: 'Consumer Recovery & Domestic Demand Surge' }, impact: { cash: 1.2, knowledge: 0.8, network: 1.1, reputation: 1.0 }, lesson: { zh: '消费复苏时，可选消费和高端消费先行。', en: 'During consumption recovery, discretionary and premium consumption lead.' }, rumors: [{ text: '政府将发放全民消费券', fake: true }, { text: '高端白酒价格已创历史新高', fake: false }, { text: '旅游酒店业已恢复至疫情前水平', fake: false }, { text: '居民储蓄率仍在持续攀升', fake: true }], bonuses: { consumer: 2.0, reit: 1.5, travel: 1.8 } },
+                    { id: 'med_tech', year: '2025年1月', title: { zh: '医疗技术突破·AI制药新时代', en: 'MedTech Breakthrough & AI Drug Discovery' }, impact: { cash: 1.1, knowledge: 1.5, network: 0.9, reputation: 1.2 }, lesson: { zh: '技术进步能创造全新赛道，但也需要时间验证。', en: 'Tech progress can create new sectors, but needs time to validate.' }, rumors: [{ text: 'AI将在一年内取代所有药物研发', fake: true }, { text: '多家药企已开始裁员重组', fake: false }, { text: '基因编辑技术已完全成熟', fake: true }, { text: '医疗数据安全成为新焦点', fake: false }], bonuses: { health: 2.5, ai: 1.8, semicon: 1.2 } },
+                    { id: 'crypto_crash', year: '2025年11月', title: { zh: '加密货币暴跌·监管全面收紧', en: 'Crypto Crash & Regulatory Crackdown' }, impact: { cash: 0.6, knowledge: 0.7, network: 0.5, reputation: 0.5 }, lesson: { zh: '监管风险是新兴资产最大的不确定性来源。', en: 'Regulatory risk is the biggest uncertainty for emerging assets.' }, rumors: [{ text: '多国将联手拯救加密市场', fake: true }, { text: '多家交易所已停止服务', fake: false }, { text: '区块链技术本身被全面禁止', fake: true }, { text: '传统金融机构正在低价收购加密资产', fake: false }], bonuses: { gold: 1.8, bond: 1.4, crypto: 0.2, saving: 1.3 } }
+                ];
+
+                function calculateCardScore(card, event) {
+                    let cash = card.reward.cash || 0;
+                    let knowledgeReward = card.reward.knowledge || 0;
+                    let reputation = card.reward.reputation || 0;
+                    let network = card.reward.network || 0;
+                    if (event) {
+                        if (event.bonuses && event.bonuses[card.id]) {
+                            const bonus = event.bonuses[card.id];
+                            cash = Math.floor(cash * bonus);
+                            reputation = Math.floor(reputation * Math.min(bonus, 1.5));
+                        }
+                        const impact = event.impact;
+                        cash = Math.floor(cash * (impact.cash || 1));
+                        knowledgeReward = Math.floor(knowledgeReward * (impact.knowledge || 1));
+                        reputation = Math.floor(reputation * (impact.reputation || 1));
+                        network = Math.floor(network * (impact.network || 1));
+                    }
+                    if (resources.value.knowledge >= 60) cash = Math.floor(cash * 1.1);
+                    return cash + knowledgeReward * 1.5 + reputation * 1.2 + network;
+                }
+
+                function generateReflection(cardId, rewardCash, rewardKnowledge, rewardReputation, rewardNetwork) {
+                    const currentScore = rewardCash + rewardKnowledge * 1.5 + rewardReputation * 1.2 + rewardNetwork;
+                    const ev = currentEvent.value;
+                    let scoredCards = allCards.map(c => { const score = calculateCardScore(c, ev); return { ...c, score }; });
+                    scoredCards.sort((a, b) => b.score - a.score);
+                    const bestCard = scoredCards[0];
+                    const chosenCard = scoredCards.find(c => c.id === cardId);
+                    const chosenScore = chosenCard ? chosenCard.score : currentScore;
+                    const diffToBest = Math.floor(bestCard.score - chosenScore);
+                    const chosenName = allCards.find(c => c.id === cardId)?.name.zh || '';
+                    const bestName = bestCard?.name.zh || '';
+                    if (bestCard.id === cardId) return `✅ 「${chosenName}」是这次的最佳选择！你对事件的理解很准确。`;
+                    if (diffToBest < 20) return `📊 「${chosenName}」和「${bestName}」差距不大（${diffToBest}点），都是合理选择。`;
+                    return `🤔 如果选了「${bestName}」，你会多赚约${diffToBest}点。是什么让你没选它？`;
+                }
+
+                function getRivalMood() {
+                    const diff = playerTotal.value - rival.value.total;
+                    if (diff > 80) return { mood: '焦虑', emoji: '😰' };
+                    if (diff > 30) return { mood: '紧张', emoji: '😅' };
+                    if (diff < -50) return { mood: '自信', emoji: '😎' };
+                    if (diff < -20) return { mood: '放松', emoji: '😊' };
+                    return { mood: '冷静', emoji: '😌' };
+                }
+
+                function rivalInvest() {
+                    const styleId = selectedRivalStyle.value;
+                    const ev = currentEvent.value;
+                    const mood = getRivalMood();
+                    rival.value.mood = mood.mood;
+                    
+                    let candidates = [];
+                    if (styleId === 'aggressive') { candidates = allCards.filter(c => c.risk === 'high'); if (candidates.length === 0) candidates = allCards; }
+                    else if (styleId === 'conservative') { candidates = allCards.filter(c => c.risk === 'low'); if (candidates.length === 0) candidates = allCards; }
+                    else if (styleId === 'follower') {
+                        if (lastResult.value) { const lastCard = allCards.find(c => c.id === lastResult.value.cardName.id); if (lastCard) candidates = [lastCard]; else candidates = allCards; }
+                        else candidates = allCards;
+                    } else if (styleId === 'contrarian') {
+                        if (lastResult.value) { const lastCard = allCards.find(c => c.id === lastResult.value.cardName.id); if (lastCard) { candidates = allCards.filter(c => c.type !== lastCard.type); if (candidates.length === 0) candidates = allCards; } else candidates = allCards; }
+                        else candidates = allCards;
+                    } else { candidates = allCards; }
+
+                    if (ev && ev.bonuses) {
+                        let scored = candidates.map(c => { let score = calculateCardScore(c, ev); return { ...c, score }; });
+                        scored.sort((a, b) => b.score - a.score);
+                        if (Math.random() < 0.7) {
+                            const top3 = scored.slice(0, 3);
+                            const affordable = top3.filter(c => 
+                                (c.cost.cash || 0) <= rival.value.cash &&
+                                (c.cost.knowledge || 0) <= rival.value.knowledge &&
+                                (c.cost.network || 0) <= rival.value.network
+                            );
+                            candidates = affordable.length > 0 ? [affordable[Math.floor(Math.random() * affordable.length)]] : [scored[0]];
+                        } else {
+                            const top5 = scored.slice(0, 5);
+                            candidates = [top5[Math.floor(Math.random() * top5.length)]];
+                        }
+                    }
+
+                    if (ev && ev.rumors && Math.random() < 0.15) {
+                        const fakeRumors = ev.rumors.filter(r => r.fake).map(r => r.text);
+                        if (fakeRumors.length > 0) {
+                            const rumorText = fakeRumors[Math.floor(Math.random() * fakeRumors.length)];
+                            showDanmaku('🤔', `小明被传闻误导了：${rumorText}，他做出了错误判断！`);
+                            let allScored = allCards.map(c => ({ ...c, score: calculateCardScore(c, ev) }));
+                            allScored.sort((a, b) => b.score - a.score);
+                            const worstChoices = allScored.slice(3, 7);
+                            if (worstChoices.length > 0) candidates = [worstChoices[Math.floor(Math.random() * worstChoices.length)]];
+                        }
+                    }
+
+                    const card = candidates[0] || allCards[Math.floor(Math.random() * allCards.length)];
+                    rival.value.lastInvestment = card.name;
+                    const costCash = card.cost.cash || 0, costKnowledge = card.cost.knowledge || 0, costNetwork = card.cost.network || 0;
+                    if (rival.value.cash < costCash || rival.value.knowledge < costKnowledge || rival.value.network < costNetwork) { 
+                        rival.value.lastChange = 0;
+                        const saveCard = allCards.find(c => c.id === 'saving');
+                        if (saveCard && rival.value.cash >= 0) { rival.value.cash += 2; rival.value.reputation += 1; const prevTotal = rival.value.total; updateRivalTotal(); rival.value.lastChange = rival.value.total - prevTotal; showDanmaku('💤', `小明钱不够，只好先存钱...`); }
+                        return; 
+                    }
+                    rival.value.cash -= costCash; rival.value.knowledge -= costKnowledge; rival.value.network -= costNetwork;
+                    let reward = (card.reward.cash || 0) * (0.7 + Math.random() * 0.6);
+                    let rewardK = (card.reward.knowledge || 0) * (0.7 + Math.random() * 0.6);
+                    let rewardR = (card.reward.reputation || 0) * (0.7 + Math.random() * 0.6);
+                    let rewardN = Math.floor(Math.random() * 8) + 2;
+                    if (ev) {
+                        reward = Math.floor(reward * (ev.impact.cash || 1));
+                        rewardK = Math.floor(rewardK * (ev.impact.knowledge || 1));
+                        rewardR = Math.floor(rewardR * (ev.impact.reputation || 1));
+                        rewardN = Math.floor(rewardN * (ev.impact.network || 1));
+                        if (ev.bonuses && ev.bonuses[card.id]) reward = Math.floor(reward * ev.bonuses[card.id]);
+                    }
+                    rival.value.cash += Math.floor(reward); rival.value.knowledge += Math.floor(rewardK);
+                    rival.value.reputation += Math.floor(rewardR); rival.value.network += rewardN;
+                    if (rival.value.cash < 0) rival.value.cash = 0;
+                    const prevTotal = rival.value.total; updateRivalTotal(); rival.value.lastChange = rival.value.total - prevTotal;
+                    const isLeading = rival.value.total > playerTotal.value;
+                    const dan = generateRivalDanmaku(rival.value.lastChange, isLeading);
+                    const cardName = card.name[lang.value];
+                    const styleName = rivalStyles.find(s => s.id === selectedRivalStyle.value)?.name[lang.value] || '';
+                    showDanmaku(dan.icon, `小明(${styleName})投资了「${cardName}」，${dan.text}`);
+                }
+
+                function generateRivalDanmaku(change, isLeading) {
+                    const msgs = [];
+                    if (change > 30) msgs.push({ icon: '🤩', text: '哈哈，这波赚翻了！' });
+                    else if (change > 10) msgs.push({ icon: '😊', text: '还不错，稳扎稳打！' });
+                    else if (change > 0) msgs.push({ icon: '🙂', text: '小赚一点，知足常乐。' });
+                    else if (change > -20) msgs.push({ icon: '😅', text: '有点小亏，问题不大。' });
+                    else msgs.push({ icon: '😱', text: '天哪！亏大了！' });
+                    if (isLeading && change > 0) msgs.push({ icon: '😏', text: '你追不上我的！' });
+                    else if (!isLeading && change > 0) msgs.push({ icon: '💪', text: '我在努力追你呢！' });
+                    else if (!isLeading && change < 0) msgs.push({ icon: '😤', text: '可恶，我要加倍努力！' });
+                    return msgs[Math.floor(Math.random() * msgs.length)];
+                }
+
+                // ===== AI教练升级版 =====
+                function generateAICoachAdvice() {
+                    const r = resources.value;
+                    const diff = playerTotal.value - rival.value.total;
+                    const ev = currentEvent.value;
+                    const history = investmentHistory.value;
+                    let responses = [];
+                    
+                    if (history.length >= 3) {
+                        const wins = history.filter(h => h.change > 0).length;
+                        const loses = history.filter(h => h.change < 0).length;
+                        const totalChange = history.reduce((sum, h) => sum + h.change, 0);
+                        
+                        if (wins > loses && wins >= 3) {
+                            responses.push('📈 你连续盈利，看来你找到了一些规律。但市场最喜欢惩罚"感觉良好"的人——你确定这不是幸存者偏差？');
+                        } else if (loses > wins && loses >= 3) {
+                            responses.push('📉 亏损不可怕，可怕的是不知道为什么亏。你复盘过这几轮吗？是选错了资产，还是时机不对？');
+                        }
+                        
+                        if (totalChange > 80) {
+                            responses.push('💰 总资产增长很猛！但高收益往往伴随高风险。如果明天市场反转，你的组合扛得住吗？');
+                        } else if (totalChange < -30) {
+                            responses.push('💸 资产在缩水。有时候"不操作"本身就是一种操作——你考虑过空仓等待吗？');
+                        }
+                        
+                        const stockCount = history.filter(h => { const card = allCards.find(c => c.name.zh === h.cardName || c.name.en === h.cardName); return card && card.type === 'stock'; }).length;
+                        if (stockCount > history.length * 0.7) {
+                            responses.push('⚠️ 你的仓位集中在股票类资产。鸡蛋放在一个篮子里时，篮子掉了怎么办？');
+                        }
+                        const saveCount = history.filter(h => { const card = allCards.find(c => c.name.zh === h.cardName || c.name.en === h.cardName); return card && card.type === 'save'; }).length;
+                        if (saveCount > history.length * 0.7) {
+                            responses.push('🛡️ 你太保守了。储蓄虽然安全，但通胀会慢慢吃掉你的购买力——你愿意接受这个代价吗？');
+                        }
+                        
+                        if (history.length >= 5) {
+                            const winRate = Math.round((wins / history.length) * 100);
+                            if (winRate >= 70) {
+                                responses.push(`🎯 胜率${winRate}%！很高，但你可能在过度交易。有时候"少即是多"。`);
+                            } else if (winRate < 40) {
+                                responses.push(`📊 胜率${winRate}%，说明你的判断逻辑可能有问题。要不要换一种思考方式？`);
+                            }
+                        }
+                    }
+                    
+                    if (ev) {
+                        const rumorTexts = ev.rumors ? ev.rumors.map((r, i) => `"${r.text}"`).join('、') : '';
+                        if (rumorTexts) {
+                            responses.push(`📰 市场传闻：${rumorTexts}。这些信息里，哪些是噪音，哪些是信号？你区分得出来吗？`);
+                        }
+                        responses.push(`🔍 当前事件「${ev.title.zh}」。很多人看到事件就追涨，但市场往往提前消化了预期——你比别人快一步，还是慢一步？`);
+                    }
+                    
+                    if (r.cash < 30) {
+                        responses.push('💰 现金告急。当你手里没有子弹的时候，机会来了也只能看着。你打算怎么补充弹药？');
+                    } else if (r.cash > 150) {
+                        responses.push('💵 现金很多。手握现金确实安全，但现金本身不产生回报。你是准备抄底，还是只是不敢出手？');
+                    }
+                    
+                    if (r.knowledge < 40) {
+                        responses.push('📚 你的财经知识储备偏低。投资本质上是对认知的变现——要不要先补补课？');
+                    } else if (r.knowledge > 80) {
+                        responses.push('🧠 你的知识储备不错。但知道和做到之间，隔着一整个太平洋。你做到了吗？');
+                    }
+                    
+                    if (r.network < 25) {
+                        responses.push('🤝 你的人际网络比较窄。很多赚钱机会来自"圈内信息"，你准备好拓展圈子了吗？');
+                    }
+                    
+                    if (diff > 50) {
+                        responses.push(`🏆 你领先小明${Math.floor(diff)}点。领先的时候最容易犯错——你觉得他会在哪里反超你？`);
+                    } else if (diff < -30) {
+                        responses.push(`😤 你落后小明${Math.floor(Math.abs(diff))}点。你知道你比他差在哪里吗？是决策质量还是执行节奏？`);
+                    } else {
+                        responses.push('⚖️ 你和小明旗鼓相当。这种时候，一个微小优势可能就是胜负手——你打算从哪里建立优势？');
+                    }
+                    
+                    const deepThoughts = [
+                        '🎭 市场就像一面镜子，照出的是你的贪婪和恐惧。你今天的决策，是理性还是情绪？',
+                        '🌀 投资中最难的不是技术，而是"忍住不做什么"。你今天的操作，是必要还是冲动？',
+                        '⏳ 时间是最被低估的资产。你的每一轮决策，都是在用时间换空间——你愿意等多久？',
+                        '🎲 运气和实力的边界在哪里？你能区分自己哪笔钱是赚的认知，哪笔钱是赚的运气吗？'
+                    ];
+                    if (Math.random() < 0.3) {
+                        responses.push(deepThoughts[Math.floor(Math.random() * deepThoughts.length)]);
+                    }
+                    
+                    if (responses.length === 0) {
+                        return '💬 你有认真思考过自己为什么会做出这些选择吗？还是只是凭感觉？';
+                    }
+                    
+                    const shuffled = responses.sort(() => Math.random() - 0.5);
+                    return shuffled.slice(0, 4).join('\n\n');
+                }
+
+                function showDanmaku(icon, text) {
+                    if (danmakuTimer) clearTimeout(danmakuTimer);
+                    danmaku.value = { icon, text };
+                    danmakuTimer = setTimeout(() => { danmaku.value = null; danmakuTimer = null; }, 4000);
+                }
+
+                // ---- 动画函数（2.5秒，带锁定） ----
+                function triggerFlash(type) {
+                    isFeedbackShowing.value = true;
+                    flashClass.value = type === 'win' ? 'flash-green' : 'flash-red';
+                    const body = document.getElementById('appBody');
+                    if (body) { body.className = type === 'win' ? 'bg-green' : 'bg-red'; }
+                    if (flashTimer) clearTimeout(flashTimer);
+                    flashTimer = setTimeout(() => { 
+                        flashClass.value = ''; 
+                        if (body) body.className = ''; 
+                        flashTimer = null;
+                        // 不在这里解锁，等coin动画一起
+                    }, 2500);
+                }
+
+                function triggerCoinRain(count = 30) {
+                    if (isAchievementShowing.value) count = 10;
+                    const coins = [];
+                    for (let i = 0; i < count; i++) { 
+                        coins.push({ 
+                            left: Math.random() * 90 + 5 + '%', 
+                            delay: (Math.random() * 0.8) + 's' 
+                        }); 
+                    }
+                    coinRain.value = coins;
+                    if (coinTimer) clearTimeout(coinTimer);
+                    coinTimer = setTimeout(() => { 
+                        coinRain.value = []; 
+                        coinTimer = null;
+                        // 解锁（确保在2.5秒后解锁）
+                        setTimeout(() => {
+                            isFeedbackShowing.value = false;
+                        }, 100);
+                    }, 2500);
+                }
+
+                // 快速解锁（紧急情况）
+                function forceUnlockFeedback() {
+                    if (isFeedbackShowing.value) {
+                        setTimeout(() => {
+                            isFeedbackShowing.value = false;
+                        }, 2600);
+                    }
+                }
+
+                function triggerAchievement(icon, title, desc) {
+                    if (isAchievementShowing.value) return;
+                    isAchievementShowing.value = true;
+                    achievement.value = { icon, title, desc };
+                    if (achievementTimer) clearTimeout(achievementTimer);
+                    achievementTimer = setTimeout(() => {
+                        achievement.value = null;
+                        isAchievementShowing.value = false;
+                        achievementTimer = null;
+                    }, 2800);
+                }
+
+                function checkAchievements(r) {
+                    if (r.cash >= 500) triggerAchievement('💰', '现金突破500！', '你积累了丰厚的现金储备！');
+                    else if (r.cash >= 300) triggerAchievement('💰', '现金突破300！', '你的现金流越来越健康！');
+                    if (r.knowledge >= 120) triggerAchievement('📚', '知识大师！', '你已经成为财经知识达人！');
+                    else if (r.knowledge >= 80) triggerAchievement('📚', '知识进阶！', '你的财经知识储备丰富！');
+                    if (r.reputation >= 80) triggerAchievement('⭐', '声誉卓越！', '你的声誉已经声名远扬！');
+                    if (r.network >= 70) triggerAchievement('🤝', '人脉广博！', '你建立了强大的人际网络！');
+                    if (r.cash >= 200 && r.knowledge >= 60 && r.reputation >= 40) triggerAchievement('🏆', '全面选手！', '你在各方面都表现出色！');
+                }
+
+                function updateRivalTotal() { rival.value.total = rival.value.cash + rival.value.knowledge + rival.value.network + rival.value.reputation; }
+
+                function resetRival() {
+                    rival.value = { name: '小明', cash: 180, knowledge: 40, network: 35, reputation: 15, total: 270, lastChange: 0, lastInvestment: null, style: rivalStyles.find(s => s.id === selectedRivalStyle.value)?.name[lang.value] || '随机型', mood: '冷静' };
+                    updateRivalTotal();
+                    if (danmakuTimer) { clearTimeout(danmakuTimer); danmakuTimer = null; }
+                    danmaku.value = null;
+                }
+
+                const snapshot = ref({ ...resources.value });
+                const currentEvent = ref(null);
+                const showEvent = ref(false);
+                const eventLog = ref([]);
+                const selectedCardId = ref(null);
+                const aiFeedback = ref({ zh: '💬 你好，我是你的AI财经教练。我不会告诉你该买什么，但我会帮你看到那些你自己没注意到的东西。', en: 'Hi, I\'m your AI Coach. I won\'t tell you what to buy, but I\'ll help you see what you\'re missing.' });
+                const aiQuestion = ref('');
+                const tutorialIndex = ref(0);
+                const tutorialSteps = [
+                    { title: { zh: '💰 现金 · 📚 知识 · 🤝 人脉 · ⭐ 声誉', en: '💰 Cash · 📚 Knowledge · 🤝 Network · ⭐ Reputation' }, desc: { zh: '管理四种资源，在10轮真实财经事件中投资。对手「小明」也在努力！', en: 'Manage resources. Rival "Xiao Ming" is competing!' } },
+                    { title: { zh: '每轮触发真实财经事件', en: 'Real Financial Events' }, desc: { zh: '事件不会告诉你买什么，需要你自己判断。', en: 'Events won\'t tell you what to buy. You have to decide.' } },
+                    { title: { zh: 'AI教练只问问题，不给答案', en: 'AI Coach asks questions, not answers' }, desc: { zh: '思考比答案更重要。小明风格可以自己选。', en: 'Thinking is more important than answers.' } }
+                ];
+                const endingType = ref(null);
+                const endings = {
+                    freedom: { title: { zh: '财务自由', en: 'Financial Freedom' }, desc: { zh: '敏锐眼光+稳健策略，你实现了财富自由！', en: 'Smart and steady, you achieved financial freedom!' }, icon: '💰' },
+                    knowledge: { title: { zh: '知识精英', en: 'Knowledge Elite' }, desc: { zh: '不断学习+理性投资，你成为受人尊敬的财经顾问。', en: 'Learning made you a respected advisor.' }, icon: '📚' },
+                    business: { title: { zh: '商业帝国', en: 'Business Empire' }, desc: { zh: '广泛人脉+良好声誉，你的商业帝国崛起！', en: 'Network and reputation built your business empire!' }, icon: '🏢' },
+                    balanced: { title: { zh: '理性投资者', en: 'Rational Investor' }, desc: { zh: '平衡策略，稳扎稳打，生活富足。', en: 'Balanced strategy leads to steady wealth.' }, icon: '⚖️' },
+                    bankrupt: { title: { zh: '投资失败', en: 'Bankrupt' }, desc: { zh: '高风险策略导致损失，需要重新学习。', en: 'High risk led to losses. Time to learn.' }, icon: '💔' },
+                    allround: { title: { zh: '全能型人才', en: 'All-Rounder' }, desc: { zh: '各方面表现出色，真正的青年领袖！', en: 'Excellent in all areas. A true leader!' }, icon: '⭐' }
+                };
+
+                const currentRound = computed(() => Math.min(round.value, maxRounds));
+                const isGameOver = computed(() => round.value >= maxRounds || resources.value.cash < 0);
+                const resourcesArray = computed(() => [
+                    { key: 'cash', label: { zh: '现金', en: 'Cash' }, icon: '💰', value: Math.floor(resources.value.cash) },
+                    { key: 'knowledge', label: { zh: '财经知识', en: 'Knowledge' }, icon: '📚', value: Math.floor(resources.value.knowledge) },
+                    { key: 'network', label: { zh: '人脉', en: 'Network' }, icon: '🤝', value: Math.floor(resources.value.network) },
+                    { key: 'reputation', label: { zh: '声誉', en: 'Reputation' }, icon: '⭐', value: Math.floor(resources.value.reputation) }
+                ]);
+                const playerTotal = computed(() => resources.value.cash + resources.value.knowledge + resources.value.network + resources.value.reputation);
+                const duelData = computed(() => {
+                    const pTotal = playerTotal.value, rTotal = rival.value.total, maxTotal = Math.max(pTotal, rTotal, 100);
+                    let pPercent = Math.max(5, (pTotal / maxTotal) * 100), rPercent = Math.max(5, (rTotal / maxTotal) * 100);
+                    const total = pPercent + rPercent;
+                    if (total > 85) { pPercent = (pPercent / total) * 85; rPercent = (rPercent / total) * 85; }
+                    pPercent = Math.max(3, pPercent); rPercent = Math.max(3, rPercent);
+                    return { you: pPercent, rival: rPercent };
+                });
+
+                function getTypeLabel(type) {
+                    const map = { stock: { zh: '股票基金', en: 'Stock' }, save: { zh: '储蓄理财', en: 'Savings' }, edu: { zh: '财经课程', en: 'Education' }, fun: { zh: '趣味生活', en: 'Lifestyle' } };
+                    return map[type] || { zh: '其他', en: 'Other' };
+                }
+
+                function getCardFit(card) {
+                    const r = resources.value;
+                    let msg = '';
+                    if (card.fit.knowledge && r.knowledge < card.fit.knowledge) msg += (lang.value === 'zh' ? '知识不足，风险增加。' : 'Low knowledge, higher risk. ');
+                    if (card.fit.network && r.network < card.fit.network) msg += (lang.value === 'zh' ? '人脉不足，收益降低。' : 'Low network, lower return. ');
+                    if (card.fit.cash && r.cash < card.fit.cash) msg += (lang.value === 'zh' ? '现金不足。' : 'Insufficient cash. ');
+                    if (card.type === 'save') msg += (lang.value === 'zh' ? '🛡️ 低风险保本' : '🛡️ Low risk');
+                    if (card.type === 'edu') msg += (lang.value === 'zh' ? '📚 提升知识' : '📚 Boost knowledge');
+                    if (card.type === 'fun') msg += (lang.value === 'zh' ? '🌟 拓展视野人脉' : '🌟 Expand horizons');
+                    return msg || (lang.value === 'zh' ? '适合当前资源。' : 'Suitable.');
+                }
+
+                // ---- 关键修改：事件触发延迟 ----
+                let pendingEvent = null;
+                let eventTriggerTimer = null;
+
+                function triggerEvent() {
+                    if (round.value === 0) return;
+                    // 如果正在显示反馈，延迟触发
+                    if (isFeedbackShowing.value) {
+                        // 保存待触发的事件
+                        const available = eventDB.filter(e => !usedEventIds.value.includes(e.id));
+                        if (available.length === 0) { 
+                            usedEventIds.value = []; 
+                            const ev = eventDB[Math.floor(Math.random() * eventDB.length)]; 
+                            pendingEvent = ev; 
+                        } else {
+                            const ev = available[Math.floor(Math.random() * available.length)];
+                            pendingEvent = ev;
+                        }
+                        if (eventTriggerTimer) clearTimeout(eventTriggerTimer);
+                        eventTriggerTimer = setTimeout(() => {
+                            doTriggerEvent(pendingEvent);
+                            pendingEvent = null;
+                            eventTriggerTimer = null;
+                        }, 2800); // 等反馈动画结束（2.5s + 缓冲）
+                        return;
+                    }
+                    // 直接触发
+                    const available = eventDB.filter(e => !usedEventIds.value.includes(e.id));
+                    if (available.length === 0) { 
+                        usedEventIds.value = []; 
+                        const ev = eventDB[Math.floor(Math.random() * eventDB.length)]; 
+                        doTriggerEvent(ev); 
+                        return; 
+                    }
+                    const ev = available[Math.floor(Math.random() * available.length)];
+                    doTriggerEvent(ev);
+                }
+
+                function doTriggerEvent(ev) {
+                    if (!ev) return;
+                    currentEvent.value = ev; 
+                    usedEventIds.value.push(ev.id); 
+                    showEvent.value = true; 
+                    eventLog.value.push({ event: ev, round: round.value });
+                }
+
+                function closeEventManual() { showEvent.value = false; }
+                function viewEventDetail(logItem) { currentEvent.value = logItem.event; showEvent.value = true; }
+
+                // ---- 选择卡片（反馈锁定期间不可操作） ----
+                function selectCard(cardId) {
+                    if (isGameOver.value || showEvent.value || showResult.value || isFeedbackShowing.value) return;
+                    const card = allCards.find(c => c.id === cardId);
+                    if (!card) return;
+                    snapshot.value = { ...resources.value };
+                    if (card.cost.cash && resources.value.cash < card.cost.cash) { aiFeedback.value = lang.value === 'zh' ? '现金不足。你觉得借钱投资划算吗？' : 'Insufficient cash.'; return; }
+                    if (card.cost.knowledge && resources.value.knowledge < card.cost.knowledge) { aiFeedback.value = lang.value === 'zh' ? '知识不足。你确定自己真的看懂了这个投资吗？' : 'Low knowledge.'; return; }
+                    if (card.cost.network && resources.value.network < card.cost.network) { aiFeedback.value = lang.value === 'zh' ? '人脉不足。你觉得靠自己能搞定吗？' : 'Network insufficient.'; return; }
+                    const costCash = card.cost.cash || 0, costKnowledge = card.cost.knowledge || 0, costNetwork = card.cost.network || 0;
+                    if (costCash) resources.value.cash -= costCash;
+                    if (costKnowledge) resources.value.knowledge -= costKnowledge;
+                    if (costNetwork) resources.value.network -= costNetwork;
+                    let rewardCash = card.reward.cash || 0, rewardKnowledge = card.reward.knowledge || 0, rewardReputation = card.reward.reputation || 0, rewardNetwork = card.reward.network || 0;
+                    const ev = currentEvent.value;
+                    let eventName = null;
+                    if (ev) {
+                        eventName = ev.title;
+                        const impact = ev.impact;
+                        rewardCash = Math.floor(rewardCash * (impact.cash || 1));
+                        rewardKnowledge = Math.floor(rewardKnowledge * (impact.knowledge || 1));
+                        rewardReputation = Math.floor(rewardReputation * (impact.reputation || 1));
+                        rewardNetwork = Math.floor(rewardNetwork * (impact.network || 1));
+                        if (ev.bonuses && ev.bonuses[card.id]) { const bonus = ev.bonuses[card.id]; rewardCash = Math.floor(rewardCash * bonus); rewardReputation = Math.floor(rewardReputation * Math.min(bonus, 1.5)); }
+                        if (resources.value.knowledge >= 60) rewardCash = Math.floor(rewardCash * 1.1);
+                        if (card.id === 'ai' && resources.value.knowledge >= 80) rewardCash = Math.floor(rewardCash * 1.3);
+                        if (card.id === 'crypto' && resources.value.knowledge >= 70) rewardCash = Math.floor(rewardCash * 1.4);
+                    }
+                    resources.value.cash += rewardCash; resources.value.knowledge += rewardKnowledge;
+                    resources.value.reputation += rewardReputation; resources.value.network += rewardNetwork;
+                    if (resources.value.cash > 0) resources.value.cash = Math.floor(resources.value.cash * 1.01);
+                    const totalChange = playerTotal.value - (snapshot.value.cash + snapshot.value.knowledge + snapshot.value.network + snapshot.value.reputation);
+                    // 触发反馈动画（带锁定）
+                    if (totalChange > 0) {
+                        triggerFlash('win');
+                        setTimeout(() => {
+                            if (!isAchievementShowing.value) triggerCoinRain(30);
+                            else triggerCoinRain(10);
+                        }, 300);
+                    } else if (totalChange < 0) {
+                        triggerFlash('lose');
+                        // 亏损时也触发少量金币雨（安慰奖）
+                        setTimeout(() => {
+                            if (!isAchievementShowing.value) triggerCoinRain(10);
+                        }, 300);
+                    }
+                    // 强制2.6秒后解锁
+                    setTimeout(() => {
+                        if (isFeedbackShowing.value) {
+                            isFeedbackShowing.value = false;
+                        }
+                    }, 2800);
+                    
+                    checkAchievements(resources.value);
+                    rivalInvest();
+                    const change = { cash: resources.value.cash - snapshot.value.cash, knowledge: resources.value.knowledge - snapshot.value.knowledge, network: resources.value.network - snapshot.value.network, reputation: resources.value.reputation - snapshot.value.reputation };
+                    roundReport.value = { cardName: card.name, change, totalChange, rivalChange: rival.value.lastChange, rivalTotal: rival.value.total };
+                    const reflection = generateReflection(card.id, rewardCash, rewardKnowledge, rewardReputation, rewardNetwork);
+                    const result = {
+                        cardName: card.name, cost: { cash: costCash, knowledge: costKnowledge, network: costNetwork },
+                        reward: { cash: rewardCash, knowledge: rewardKnowledge, reputation: rewardReputation, network: rewardNetwork },
+                        event: eventName, lesson: ev ? ev.lesson : null, before: { ...snapshot.value }, after: { ...resources.value },
+                        round: round.value + 1, change, rivalTotal: rival.value.total, rivalChange: rival.value.lastChange,
+                        reflection: reflection, cardId: card.id
+                    };
+                    investmentHistory.value.push({ round: round.value + 1, cardName: card.name[lang.value], eventName: eventName ? eventName[lang.value] : null, change: totalChange, reflection: reflection });
+                    lastResult.value = result; 
+                    // 延迟显示结果弹窗（等反馈动画结束）
+                    setTimeout(() => {
+                        showResult.value = true;
+                    }, 2600);
+                    
+                    const name = card.name[lang.value];
+                    aiFeedback.value = lang.value === 'zh' ? `你投资了${name}。结果：💰${rewardCash} 📚${rewardKnowledge} 🤝${rewardNetwork} ⭐${rewardReputation}` : `You invested in ${name}. Result: 💰${rewardCash} 📚${rewardKnowledge} 🤝${rewardNetwork} ⭐${rewardReputation}`;
+                    currentEvent.value = null;
+                }
+
+                function confirmResult() {
+                    showResult.value = false;
+                    round.value++;
+                    if (round.value >= maxRounds || resources.value.cash < 0) { gameState.value = 'ending'; generateEnding(); }
+                    else { 
+                        // 触发下一轮事件（会检查反馈锁定状态）
+                        triggerEvent(); 
+                        aiFeedback.value = generateAICoachAdvice(); 
+                    }
+                    selectedCardId.value = null;
+                    setTimeout(() => { roundReport.value = null; }, 3000);
+                }
+
+                function generateEnding() {
+                    const r = resources.value;
+                    if (r.cash < 20 || (r.knowledge < 20 && r.network < 20 && r.reputation < 20)) endingType.value = 'bankrupt';
+                    else if (r.cash >= 300 && r.reputation >= 60) endingType.value = 'freedom';
+                    else if (r.knowledge >= 120 && r.cash >= 100) endingType.value = 'knowledge';
+                    else if (r.reputation >= 90 && r.network >= 70) endingType.value = 'business';
+                    else if (r.cash >= 150 && r.knowledge >= 50 && r.network >= 50 && r.reputation >= 50) endingType.value = 'balanced';
+                    else if (r.knowledge >= 70 && r.network >= 70 && r.reputation >= 70 && r.cash >= 80) endingType.value = 'allround';
+                    else endingType.value = 'balanced';
+                    triggerAchievement('🏁', endings[endingType.value].title[lang.value], endings[endingType.value].desc[lang.value]);
+                    if (playerTotal.value > rival.value.total) showDanmaku('🏆', '哈哈，我赢了！小明你还要努力啊！');
+                    else if (playerTotal.value < rival.value.total) showDanmaku('😤', '可恶，输给小明了一点点！下次一定赢！');
+                    else showDanmaku('🤝', '平局！我们都很厉害！');
+                }
+
+                function resetGame() {
+                    resources.value = { ...startResources }; round.value = 0; gameState.value = 'landing'; endingType.value = null;
+                    selectedCardId.value = null; eventLog.value = []; usedEventIds.value = []; expandedLogId.value = null; investmentHistory.value = [];
+                    tutorialIndex.value = 0;
+                    pendingEvent = null;
+                    if (eventTriggerTimer) { clearTimeout(eventTriggerTimer); eventTriggerTimer = null; }
+                    aiFeedback.value = lang.value === 'zh' ? '💬 你好，我是你的AI财经教练。我不会告诉你该买什么，但我会帮你看到那些你自己没注意到的东西。' : 'Hi, I\'m your AI Coach. I won\'t tell you what to buy, but I\'ll help you see what you\'re missing.';
+                    currentEvent.value = null; showEvent.value = false; showResult.value = false; lastResult.value = null; roundReport.value = null;
+                    showExitConfirm.value = false; resetRival(); achievement.value = null; isAchievementShowing.value = false;
+                    if (achievementTimer) { clearTimeout(achievementTimer); achievementTimer = null; }
+                    if (flashTimer) { clearTimeout(flashTimer); flashTimer = null; }
+                    if (coinTimer) { clearTimeout(coinTimer); coinTimer = null; }
+                    flashClass.value = ''; if (danmakuTimer) { clearTimeout(danmakuTimer); danmakuTimer = null; } danmaku.value = null; coinRain.value = [];
+                    isFeedbackShowing.value = false;
+                }
+
+                function exitGame() { showExitConfirm.value = true; }
+                function confirmExit() { showExitConfirm.value = false; resetGame(); }
+                function cancelExit() { showExitConfirm.value = false; }
+
+                function askAI() {
+                    if (!aiQuestion.value.trim()) return;
+                    const q = aiQuestion.value.toLowerCase();
+                    const ev = currentEvent.value;
+                    let reply = lang.value === 'zh' ? '🧠 AI教练：' : '🧠 AI Coach: ';
+                    
+                    if (q.includes('事件') || q.includes('event') || q.includes('传闻') || q.includes('谣言')) {
+                        if (ev) {
+                            const rumorTexts = ev.rumors ? ev.rumors.map((rum, i) => `${i+1}. ${rum.text}`).join('\n') : '无';
+                            reply += `当前事件是「${ev.title.zh}」(${ev.year})。\n📢 市场传闻：\n${rumorTexts}\n\n🤔 你觉得这些传闻中，哪些是真话，哪些是陷阱？`;
+                        } else { reply += '当前没有事件。你可以查看事件日志回顾历史事件。'; }
+                    } else if (q.includes('小明') || q.includes('对手') || q.includes('rival')) {
+                        const mood = getRivalMood();
+                        reply += `小明总资产${Math.floor(rival.value.total)}点，${playerTotal.value > rival.value.total ? '你领先' + Math.floor(playerTotal.value - rival.value.total) + '点！' : '他领先你' + Math.floor(rival.value.total - playerTotal.value) + '点'} 他目前情绪：${mood.mood}。\n\n🤔 你觉得他下一步会怎么走？为什么？`;
+                    } else if (q.includes('风格') || q.includes('style')) {
+                        reply += `小明当前是「${rivalStyles.find(s=>s.id===selectedRivalStyle.value)?.name.zh||''}」风格。\n\n🤔 这个风格下，小明会偏向什么类型的资产？他的弱点在哪里？`;
+                    } else if (q.includes('诊断') || q.includes('行为') || q.includes('分析')) {
+                        const history = investmentHistory.value;
+                        if (history.length >= 2) {
+                            const wins = history.filter(h => h.change > 0).length, loses = history.filter(h => h.change < 0).length, totalChange = history.reduce((sum, h) => sum + h.change, 0);
+                            let diag = '';
+                            if (wins > loses) diag += `👍 胜率${Math.round(wins/history.length*100)}%，但你确定这是实力还是运气？\n`;
+                            else if (loses > wins) diag += `📉 亏损偏多（${Math.round(loses/history.length*100)}%），你觉得问题出在哪里？\n`;
+                            if (totalChange < 0) diag += `💭 总资产在下降，你需要重新审视自己的投资逻辑。\n`;
+                            if (totalChange > 50) diag += `🎉 总资产增长不错，你觉得这种趋势能持续吗？\n`;
+                            diag += `\n💡 建议：回顾你每轮选择的理由，找出规律。`;
+                            reply += diag;
+                        } else { reply += '📊 记录还不够多，再多投几轮我才能帮你分析行为模式。'; }
+                    } else if (q.includes('反思') || q.includes('重来')) {
+                        if (investmentHistory.value.length > 0) {
+                            const last = investmentHistory.value[investmentHistory.value.length - 1];
+                            reply += last.reflection;
+                        } else {
+                            reply += '你还没有投资记录，先试试手吧！';
+                        }
+                    } else if (q.includes('建议') || q.includes('advice')) {
+                        reply += generateAICoachAdvice();
+                    } else {
+                        reply += '💡 你可以问我：\n- 当前事件是什么？有哪些传闻？\n- 小明现在什么状态？\n- 帮我诊断一下我的投资行为\n- 给我一些反思\n- 你有什么建议？\n\n我不会告诉你买什么，但我会帮你看到那些你忽略的东西。';
+                    }
+                    aiFeedback.value = reply;
+                    aiQuestion.value = '';
+                }
+
+                function startGame() {
+                    usedEventIds.value = []; investmentHistory.value = []; resources.value = { ...startResources }; resetRival();
+                    gameState.value = 'tutorial'; tutorialIndex.value = 0;
+                    aiFeedback.value = lang.value === 'zh' ? '💬 欢迎！我是你的AI财经教练。我不会替你做决定，但我会陪你一起思考。' : 'Welcome! I\'m your AI Coach. I\'ll think with you, not for you.';
+                }
+
+                function nextTutorial() {
+                    if (tutorialIndex.value < tutorialSteps.length - 1) tutorialIndex.value++;
+                    else { gameState.value = 'playing'; round.value = 1; triggerEvent(); aiFeedback.value = generateAICoachAdvice(); }
+                }
+                function skipTutorial() { gameState.value = 'playing'; round.value = 1; triggerEvent(); aiFeedback.value = generateAICoachAdvice(); }
+
+                function generateFinalAssessment() {
+                    const totalChange = playerTotal.value - (startResources.cash + startResources.knowledge + startResources.network + startResources.reputation);
+                    let riskLevel = 0, saveCount = 0, stockCount = 0, winCount = 0, loseCount = 0;
+                    investmentHistory.value.forEach(h => {
+                        if (h.change > 0) winCount++;
+                        else if (h.change < 0) loseCount++;
+                        const card = allCards.find(c => c.name.zh === h.cardName || c.name.en === h.cardName);
+                        if (card) { if (card.type === 'save') saveCount++; else if (card.type === 'stock') stockCount++; if (card.risk === 'high') riskLevel++; else if (card.risk === 'medium') riskLevel += 0.5; }
+                    });
+                    const totalInvestments = investmentHistory.value.length || 1;
+                    const winRate = Math.round((winCount / totalInvestments) * 100);
+                    const riskScore = Math.round((riskLevel / totalInvestments) * 100);
+                    let styleDesc = '';
+                    if (riskScore > 60 && stockCount > saveCount) styleDesc = '🔥 激进型投资者，喜欢追逐高收益高风险。';
+                    else if (riskScore < 30 && saveCount > stockCount) styleDesc = '🛡️ 保守型投资者，稳扎稳打，注重保本。';
+                    else if (winRate > 60) styleDesc = '📈 稳健盈利型，胜率很高，决策质量不错。';
+                    else styleDesc = '⚖️ 均衡型投资者，在各类资产中寻找平衡。';
+                    let perf = '';
+                    if (totalChange > 100) perf = '🎉 总收益超过100点，表现非常出色！';
+                    else if (totalChange > 50) perf = '👍 总收益超过50点，表现不错！';
+                    else if (totalChange > 0) perf = '😊 略有盈利，方向是对的。';
+                    else perf = '🤔 略有亏损，需要复盘某些决策。';
+                    return { styleDesc, perf, winRate, winCount, loseCount, riskScore };
+                }
+
+                watch(lang, () => {
+                    document.getElementById('langLabel').innerText = lang.value === 'zh' ? 'EN / 中' : '中 / EN';
+                    const style = rivalStyles.find(s => s.id === selectedRivalStyle.value);
+                    if (style) rival.value.style = style.name[lang.value];
+                });
+                onMounted(() => { document.getElementById('langLabel').innerText = 'EN / 中'; resetRival(); });
+
+                return {
+                    lang, toggleLang, gameState, resources, round, maxRounds, allCards, currentCards, currentEvent, showEvent,
+                    selectedCardId, aiFeedback, aiQuestion, askAI, tutorialIndex, tutorialSteps, startGame, nextTutorial, skipTutorial,
+                    resetGame, selectCard, getCardFit, closeEventManual, isGameOver, currentRound, resourcesArray, endingType,
+                    endings, eventLog, generateEnding, triggerEvent, viewEventDetail, showAbout, openAbout, closeAbout,
+                    showResult, lastResult, confirmResult, rival, roundReport, danmaku, playerTotal, duelData,
+                    flashClass, coinRain, achievement, triggerAchievement, showExitConfirm, exitGame, confirmExit, cancelExit,
+                    getTypeLabel, expandedLogId, toggleLogDetail, generateAICoachAdvice, investmentHistory,
+                    rivalStyles, selectedRivalStyle, resetRival, generateFinalAssessment, startResources,
+                    isAchievementShowing, getRivalMood, isFeedbackShowing
+                };
+            },
+            template: `
+            <div>
+                <!-- 反馈锁定遮罩 -->
+                <div class="feedback-lock" :class="{'active': isFeedbackShowing}"></div>
+                
+                <div class="screen-flash" :class="flashClass"></div>
+                <div class="coin-rain" v-if="coinRain.length > 0 && !achievement">
+                    <div v-for="(c, idx) in coinRain" :key="idx" class="coin" :style="{ left: c.left, animationDelay: c.delay }">🪙</div>
+                </div>
+                <div v-if="achievement" class="achievement-popup">
+                    <div class="ach-icon">{{ achievement.icon }}</div>
+                    <div class="ach-title">{{ achievement.title }}</div>
+                    <div class="ach-desc">{{ achievement.desc }}</div>
+                </div>
+
+                <div v-if="gameState === 'playing'" class="duel-progress">
+                    <div class="duel-labels">
+                        <span class="you-label">🟢 你 {{ Math.floor(playerTotal) }}</span>
+                        <span class="rival-label">🔴 小明 {{ Math.floor(rival.total) }} <span style="font-size:0.6rem;opacity:0.5;">{{ getRivalMood().emoji }} {{ getRivalMood().mood }}</span></span>
+                    </div>
+                    <div class="duel-track">
+                        <div class="bar-container">
+                            <div class="you-bar" :style="{ width: duelData.you + '%' }">{{ Math.floor(duelData.you) > 20 ? Math.floor(playerTotal) : '' }}</div>
+                            <div class="rival-bar" :style="{ width: duelData.rival + '%' }">{{ Math.floor(duelData.rival) > 20 ? Math.floor(rival.total) : '' }}</div>
+                            <div class="vs-marker">VS</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="danmaku && gameState === 'playing'" class="rival-danmaku"><span class="danmaku-icon">{{ danmaku.icon }}</span><span class="danmaku-text"><span class="highlight">小明</span>：{{ danmaku.text }}</span></div>
+
+                <div v-if="gameState === 'playing'" class="rival-panel">
+                    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                        <span class="rival-name"><i class="fas fa-user-circle"></i> 小明 <span class="rival-tag">对手</span></span>
+                        <span style="opacity:0.5;font-size:0.8rem;">总资产</span>
+                        <span class="rival-assets">{{ Math.floor(rival.total) }}</span>
+                        <span class="rival-change" :class="rival.lastChange >= 0 ? 'up' : 'down'">{{ rival.lastChange >= 0 ? '▲' : '▼' }} {{ Math.abs(Math.floor(rival.lastChange)) }}</span>
+                        <span class="rival-style">{{ rival.style }}</span>
+                        <span class="rival-mood">{{ getRivalMood().emoji }} {{ getRivalMood().mood }}</span>
+                    </div>
+                    <div class="rival-detail"><span>💰{{ Math.floor(rival.cash) }}</span><span>📚{{ Math.floor(rival.knowledge) }}</span><span>🤝{{ Math.floor(rival.network) }}</span><span>⭐{{ Math.floor(rival.reputation) }}</span></div>
+                </div>
+
+                <div v-if="gameState !== 'landing' && gameState !== 'ending' && gameState !== 'tutorial'" class="resources-bar">
+                    <div v-for="res in resourcesArray" :key="res.key" class="resource-item"><span class="resource-icon">{{ res.icon }}</span><div class="resource-info"><div class="resource-label">{{ lang === 'zh' ? res.label.zh : res.label.en }} <span class="player-tag" style="font-size:0.5rem;padding:0 6px;">你</span></div><div class="resource-value" :class="{'flash-green': res.value > 0 && lastResult && lastResult.change && lastResult.change[res.key] > 0,'flash-red': res.value > 0 && lastResult && lastResult.change && lastResult.change[res.key] < 0}">{{ Math.floor(res.value) }}</div><div class="progress-bar"><div class="progress-fill" :style="{ width: Math.min(100, (res.value/300)*100)+'%' }"></div></div></div></div>
+                </div>
+
+                <div v-if="gameState === 'playing'" class="round-badge">
+                    <span class="round-text">{{ lang === 'zh' ? '第' : 'Round ' }}{{ currentRound }}/{{ maxRounds }}</span>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                        <span style="opacity:0.4;font-size:0.8rem;">14个选项</span>
+                        <button class="btn btn-danger" @click="exitGame" style="padding:6px 16px;font-size:0.8rem;"><i class="fas fa-sign-out-alt"></i> 退出</button>
+                    </div>
+                </div>
+
+                <div v-if="roundReport && gameState === 'playing'" class="round-report"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;"><span><strong>{{ roundReport.cardName[lang] }}</strong> <span :style="{color: roundReport.totalChange >= 0 ? '#6fcf97' : '#f28b82', fontWeight:700}">{{ roundReport.totalChange >= 0 ? '+' : '' }}{{ Math.floor(roundReport.totalChange) }}</span></span><span style="opacity:0.6;">🤼 小明 {{ roundReport.rivalChange >= 0 ? '+' : '' }}{{ Math.floor(roundReport.rivalChange) }} → {{ Math.floor(roundReport.rivalTotal) }}</span></div></div>
+
+                <div v-if="gameState === 'landing'" class="card" style="text-align:center;padding:50px 20px;">
+                    <h1 style="font-size:3.2rem;color:#e6c27a;">Wealth Builder AI</h1>
+                    <h2 style="font-weight:300;color:#b8943c;">财富成长实验室</h2>
+                    <p style="font-size:1.1rem;margin:20px 0;opacity:0.8;">10轮真实财经事件 · 14种投资选项 · 自己判断</p>
+                    <div style="margin:20px 0;">
+                        <p style="opacity:0.6;font-size:0.9rem;margin-bottom:10px;">🤼 选择小明的投资风格</p>
+                        <div class="style-select">
+                            <div v-for="style in rivalStyles" :key="style.id" class="style-option" :class="{active: selectedRivalStyle === style.id}" @click="selectedRivalStyle = style.id; resetRival();">
+                                <span class="style-icon">{{ style.icon }}</span>
+                                <div class="style-name">{{ style.name[lang] }}</div>
+                                <div class="style-desc">{{ style.desc[lang] }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+                        <button class="btn btn-primary" @click="startGame"><i class="fas fa-play"></i> 开始游戏</button>
+                        <button class="btn" @click="openAbout"><i class="fas fa-info-circle"></i> 项目介绍</button>
+                    </div>
+                </div>
+
+                <div v-if="showAbout" class="about-overlay" @click.self="closeAbout"><div class="about-modal"><h1>🏦 Wealth Builder AI</h1><div class="subhead">财富成长实验室 · 金融教育模拟游戏</div><h3>🎯 核心理念</h3><p>真正的投资没有标准答案。每轮事件只会描述现象，你需要自己判断什么资产会受益。AI教练会问问题引导思考，但不会替你决策。</p><h3>🧠 小明风格</h3><p>你可以选择小明的投资风格：激进型、保守型、跟风型、反转型、随机型。小明会有情绪变化，也可能被市场谣言误导。</p><h3>📊 学习目标</h3><ul><li>✔ 理解宏观经济事件背后的逻辑</li><li>✔ 培养独立判断能力，不盲从</li><li>✔ 学会反思自己的决策</li><li>✔ 辨别真假财经资讯</li></ul><div class="close-about"><button class="btn btn-primary" @click="closeAbout"><i class="fas fa-check"></i> 开始探索</button></div></div></div>
+
+                <div v-if="gameState === 'tutorial'" class="card">
+                    <div class="tutorial-step">
+                        <h2>{{ tutorialSteps[tutorialIndex].title[lang] }}</h2>
+                        <p style="margin:14px 0;">{{ tutorialSteps[tutorialIndex].desc[lang] }}</p>
+                        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                            <button class="btn btn-primary" @click="nextTutorial">{{ tutorialIndex === tutorialSteps.length-1 ? (lang==='zh'?'开始游戏':'Start') : (lang==='zh'?'下一步':'Next') }}</button>
+                            <button class="btn" @click="skipTutorial">{{ lang==='zh'?'跳过教程':'Skip' }}</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="gameState === 'playing'">
+                    <div class="event-log" v-if="eventLog.length">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;opacity:0.5;font-size:0.8rem;">
+                            <span>📋 历史事件（点击查看详情）</span>
+                            <span>{{ eventLog.length }} 个事件</span>
+                        </div>
+                        <div v-for="(log, idx) in eventLog" :key="idx">
+                            <div class="log-item" @click="toggleLogDetail(idx)">
+                                <span class="log-year">[{{ log.event.year }}]</span>
+                                <span class="log-event-name">{{ log.event.title[lang] }}</span>
+                                <span class="log-view-btn"><i class="fas fa-chevron-down" :class="{'fa-rotate-180': expandedLogId === idx}"></i></span>
+                            </div>
+                            <div class="log-detail" :class="{'open': expandedLogId === idx}">
+                                <div style="color:#b87ae6;font-weight:600;">📢 市场传闻</div>
+                                <div v-for="(rum, ri) in log.event.rumors" :key="ri" style="opacity:0.8;font-size:0.85rem;padding:2px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                                    <span>{{ ri+1 }}.</span>
+                                    <span>{{ rum.text }}</span>
+                                    <span class="rumor-tag">❓ 存疑</span>
+                                </div>
+                                <div style="margin-top:6px;color:#6fcf97;">💡 {{ log.event.lesson[lang] }}</div>
+                                <button class="btn btn-sm btn-primary" @click.stop="viewEventDetail(log)" style="margin-top:8px;"><i class="fas fa-eye"></i> 查看完整事件</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-else style="text-align:center;padding:12px;opacity:0.4;font-size:0.9rem;">暂无事件记录</div>
+
+                    <div v-if="currentEvent && showEvent === false" style="background:#1c2329;border-radius:16px;padding:8px 16px;margin:8px 0;border-left:4px solid #b8943c;font-size:0.85rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                        <span>📌 当前事件：<strong>{{ currentEvent.title[lang] }}</strong> ({{ currentEvent.year }})</span>
+                        <span style="font-size:0.7rem;opacity:0.5;">💡 市场传闻 {{ currentEvent.rumors ? currentEvent.rumors.length : 0 }} 条</span>
+                    </div>
+
+                    <div class="card-grid">
+                        <div v-for="card in allCards" :key="card.id" class="investment-card" @click="selectCard(card.id)">
+                            <div><span class="card-type-tag" :class="card.type">{{ getTypeLabel(card.type)[lang] }}</span></div>
+                            <div class="card-title">{{ card.name[lang] }}</div>
+                            <div class="card-sub">{{ card.concept[lang] }}</div>
+                            <div class="card-cost">
+                                <span v-if="card.cost.cash"><i class="fas fa-coins"></i> -{{ card.cost.cash }}</span>
+                                <span v-if="card.cost.knowledge"><i class="fas fa-book"></i> -{{ card.cost.knowledge }}</span>
+                                <span v-if="card.cost.network"><i class="fas fa-users"></i> -{{ card.cost.network }}</span>
+                            </div>
+                            <div>
+                                <span class="badge-risk" v-if="card.risk">风险: {{ card.risk==='high'?'高':card.risk==='medium'?'中':'低' }}</span>
+                                <span class="badge-reward" v-if="card.reward.cash"><i class="fas fa-arrow-up"></i> {{ card.reward.cash || 0 }}💰</span>
+                                <span class="badge-save" v-if="card.type === 'save'">🛡️ 保本</span>
+                                <span class="badge-education" v-if="card.type === 'edu'">📚 知识</span>
+                            </div>
+                            <div class="card-fit">{{ getCardFit(card) }}</div>
+                        </div>
+                    </div>
+
+                    <div class="ai-coach-area">
+                        <div class="ai-header"><i class="fas fa-robot" style="color:#b8943c;"></i> AI Financial Coach</div>
+                        <div class="ai-bubble" style="border-left:4px solid #b87ae6;white-space:pre-line;">{{ aiFeedback }}</div>
+                        <div class="ai-question-input">
+                            <input v-model="aiQuestion" :placeholder="lang==='zh'?'向AI提问（如：当前事件是什么？有什么传闻？帮我诊断）':'Ask AI (e.g., What is the event? Any rumors? Diagnose me)'" @keyup.enter="askAI">
+                            <button class="btn" @click="askAI"><i class="fas fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="showResult && lastResult" class="result-overlay" @click.self="confirmResult">
+                    <div class="result-modal">
+                        <div class="result-title">📊 投资结果</div>
+                        <div class="result-sub">第 {{ lastResult.round }} 轮 · {{ lastResult.cardName[lang] }}</div>
+                        <div class="result-event-badge" v-if="lastResult.event"><div style="font-weight:600;color:#e6c27a;">{{ lastResult.event[lang] }}</div><div style="font-size:0.8rem;opacity:0.7;" v-if="lastResult.lesson">{{ lastResult.lesson[lang] }}</div></div>
+                        <div class="result-grid">
+                            <div class="result-item"><span>💰 现金</span><span class="change" :class="lastResult.change.cash >= 0 ? 'positive' : 'negative'">{{ lastResult.change.cash >= 0 ? '+' : '' }}{{ Math.floor(lastResult.change.cash) }}</span><span style="opacity:0.5;font-size:0.8rem;">→ {{ Math.floor(lastResult.after.cash) }}</span></div>
+                            <div class="result-item"><span>📚 知识</span><span class="change" :class="lastResult.change.knowledge >= 0 ? 'positive' : 'negative'">{{ lastResult.change.knowledge >= 0 ? '+' : '' }}{{ Math.floor(lastResult.change.knowledge) }}</span><span style="opacity:0.5;font-size:0.8rem;">→ {{ Math.floor(lastResult.after.knowledge) }}</span></div>
+                            <div class="result-item"><span>🤝 人脉</span><span class="change" :class="lastResult.change.network >= 0 ? 'positive' : 'negative'">{{ lastResult.change.network >= 0 ? '+' : '' }}{{ Math.floor(lastResult.change.network) }}</span><span style="opacity:0.5;font-size:0.8rem;">→ {{ Math.floor(lastResult.after.network) }}</span></div>
+                            <div class="result-item"><span>⭐ 声誉</span><span class="change" :class="lastResult.change.reputation >= 0 ? 'positive' : 'negative'">{{ lastResult.change.reputation >= 0 ? '+' : '' }}{{ Math.floor(lastResult.change.reputation) }}</span><span style="opacity:0.5;font-size:0.8rem;">→ {{ Math.floor(lastResult.after.reputation) }}</span></div>
+                        </div>
+                        <div class="reflection-box" v-if="lastResult.reflection"><div class="reflection-title">🤔 如果重来一次</div><div class="reflection-content">{{ lastResult.reflection }}</div></div>
+                        <div style="display:flex;justify-content:space-between;margin:8px 0 12px;padding:8px 12px;background:#0f1318;border-radius:20px;font-size:0.9rem;"><span>🤼 小明 总资产: {{ Math.floor(lastResult.rivalTotal) }}</span><span :style="{color: lastResult.rivalChange >= 0 ? '#6fcf97' : '#f28b82'}">{{ lastResult.rivalChange >= 0 ? '+' : '' }}{{ Math.floor(lastResult.rivalChange) }}</span></div>
+                        <button class="btn btn-primary" @click="confirmResult">继续下一轮 →</button>
+                    </div>
+                </div>
+
+                <!-- 事件弹窗 -->
+                <div v-if="showEvent && currentEvent" class="event-overlay" @click.self="closeEventManual">
+                    <div class="event-modal">
+                        <div class="event-year">📅 {{ currentEvent.year }}</div>
+                        <div class="event-title">{{ currentEvent.title[lang] }}</div>
+                        <div class="rumors-section" v-if="currentEvent.rumors && currentEvent.rumors.length > 0">
+                            <span class="rumor-label">📢 市场传闻</span>
+                            <div v-for="(rum, idx) in currentEvent.rumors" :key="idx" class="rumor-item">
+                                <span class="rumor-marker">{{ idx+1 }}.</span>
+                                <span class="rumor-text">{{ rum.text }}</span>
+                                <span class="rumor-tag">❓ 存疑</span>
+                            </div>
+                            <div style="margin-top:8px;padding-top:8px;border-top:1px solid #2a2f36;font-size:0.75rem;opacity:0.4;">🤔 这些传闻中，哪些可能影响你的投资决策？</div>
+                        </div>
+                        <div class="lesson-box" v-if="currentEvent.lesson"><i class="fas fa-graduation-cap"></i><strong>{{ lang === 'zh' ? '知识点：' : 'Key Lesson: ' }}</strong>{{ currentEvent.lesson[lang] }}</div>
+                        <button class="btn btn-primary" @click="closeEventManual" style="width:100%;justify-content:center;">{{ lang === 'zh' ? '我看到了，开始决策' : 'I see, let me decide' }}</button>
+                    </div>
+                </div>
+
+                <div v-if="showExitConfirm" class="exit-overlay" @click.self="cancelExit"><div class="exit-modal"><h2>🚪 确定要退出吗？</h2><p>退出后当前进度将丢失，确定要离开吗？</p><div class="exit-btns"><button class="btn btn-danger" @click="confirmExit"><i class="fas fa-check"></i> 确定退出</button><button class="btn btn-primary" @click="cancelExit"><i class="fas fa-arrow-left"></i> 继续游戏</button></div></div></div>
+
+                <div v-if="gameState === 'ending'" class="card ending-container">
+                    <div class="ending-icon">{{ endings[endingType]?.icon || '🏁' }}</div>
+                    <h1 style="color:#e6c27a;">{{ endings[endingType]?.title[lang] || '结局' }}</h1>
+                    <p style="max-width:500px;margin:12px auto;opacity:0.8;">{{ endings[endingType]?.desc[lang] || '' }}</p>
+                    <div style="background:#0f1318;border-radius:20px;padding:16px;margin:12px 0;">
+                        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+                            <div v-for="res in resourcesArray" :key="res.key" style="text-align:center;">
+                                <div style="font-size:1.8rem;">{{ res.icon }}</div>
+                                <div style="font-size:1.4rem;font-weight:700;color:#f0e2c0;">{{ Math.floor(res.value) }}</div>
+                                <div style="font-size:0.7rem;opacity:0.5;">{{ res.label[lang] }}</div>
+                                <div style="font-size:0.75rem;font-weight:600;" :class="res.value - startResources[res.key] >= 0 ? 'positive' : 'negative'">{{ res.value - startResources[res.key] >= 0 ? '+' : '' }}{{ Math.floor(res.value - startResources[res.key]) }}</div>
+                            </div>
+                        </div>
+                        <div style="text-align:center;margin-top:10px;color:#b8943c;font-size:0.9rem;">总资产：<span style="font-size:1.4rem;font-weight:700;color:#e6c27a;">{{ Math.floor(playerTotal) }}</span><span style="opacity:0.5;">（初始 {{ Math.floor(startResources.cash + startResources.knowledge + startResources.network + startResources.reputation) }}）</span><span style="font-weight:600;" :class="playerTotal - (startResources.cash + startResources.knowledge + startResources.network + startResources.reputation) >= 0 ? 'positive' : 'negative'">{{ playerTotal - (startResources.cash + startResources.knowledge + startResources.network + startResources.reputation) >= 0 ? '+' : '' }}{{ Math.floor(playerTotal - (startResources.cash + startResources.knowledge + startResources.network + startResources.reputation)) }}</span></div>
+                    </div>
+                    <div class="final-assessment" v-if="investmentHistory.length > 0">
+                        <div class="assessment-title"><span>📊</span><span>投资风格分析</span></div>
+                        <div class="assessment-content"><p>{{ generateFinalAssessment().styleDesc }}</p><p>{{ generateFinalAssessment().perf }}</p><p style="margin-top:6px;font-size:0.85rem;opacity:0.6;">📊 赢 {{ generateFinalAssessment().winCount }} 轮 / 输 {{ generateFinalAssessment().loseCount }} 轮 · 胜率 {{ generateFinalAssessment().winRate }}% · 风险偏好 {{ generateFinalAssessment().riskScore }}%</p></div>
+                    </div>
+                    <div class="ending-review">
+                        <h3 style="color:#b8943c;margin:16px 0 12px;">📋 10轮决策回顾</h3>
+                        <div v-for="(h, idx) in investmentHistory" :key="idx" class="review-round">
+                            <div class="round-header">
+                                <span>第 {{ h.round }} 轮</span>
+                                <span class="round-result" :class="h.change >= 0 ? 'win' : 'lose'">{{ h.change >= 0 ? '+' : '' }}{{ Math.floor(h.change) }}</span>
+                            </div>
+                            <div class="round-detail">
+                                <span style="color:#e6d5b0;">{{ h.cardName }}</span>
+                                <span v-if="h.eventName" style="opacity:0.5;margin-left:8px;">| {{ h.eventName }}</span>
+                            </div>
+                            <div style="font-size:0.8rem;opacity:0.6;margin-top:4px;">{{ h.reflection }}</div>
+                        </div>
+                    </div>
+                    <div style="opacity:0.5;font-size:0.9rem;margin-bottom:16px;">🤼 小明 最终总资产: {{ Math.floor(rival.total) }} | 风格: {{ rival.style }}</div>
+                    <div v-if="danmaku" style="background:#1c2329;border-radius:20px;padding:10px 16px;margin-bottom:16px;border-left:4px solid #f28b82;"><span style="opacity:0.7;font-size:0.8rem;">小明最后说：</span><span>{{ danmaku.text }}</span></div>
+                    <button class="btn btn-primary" @click="resetGame"><i class="fas fa-redo"></i> 重新开始</button>
+                    <button class="btn" @click="alert('成绩卡片已复制（模拟）')"><i class="fas fa-share-alt"></i> 分享成绩</button>
+                </div>
+            </div>
+            `
+        });
+        app.mount('#app');
+    </script>
+</body>
+</html>
