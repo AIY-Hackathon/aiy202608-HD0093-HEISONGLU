@@ -1,3 +1,26 @@
+<div align="center">
+
+# 🏆 AIY 黑客松 2026 深圳站 · 组委会官方存档
+
+<p>
+  <img alt="团队编号" src="https://img.shields.io/badge/团队编号-HD0093-B7791F?style=for-the-badge">
+  <img alt="组别" src="https://img.shields.io/badge/组别-%E9%AB%98%E4%B8%AD%E7%BB%84_HD-B7791F?style=for-the-badge">
+  <img alt="赛道" src="https://img.shields.io/badge/赛道-%E9%87%91%E7%A8%B3%E9%99%A2%E8%B5%9B%E9%81%93-4A5568?style=for-the-badge">
+</p>
+
+**队名：黑松露**　|　**作品：Wealth Builder AI：财富成长实验室**
+
+> 在真实财经事件中学习投资思维，而不是背诵财经知识
+
+本项目为 AIY 黑客松参赛作品，作品归团队所有；AIY 组委会仅作收录与展示。
+Fork 自选手原始仓库：[tao1017123/aiy202608-HD0093-HEISONGLU](https://github.com/tao1017123/aiy202608-HD0093-HEISONGLU)
+
+</div>
+
+---
+
+<!-- 以下为选手提交的原始 README 内容 -->
+
 # aiy202608-HD0093-黑松露
 # 🏦 Wealth Builder AI：财富成长实验室
 
